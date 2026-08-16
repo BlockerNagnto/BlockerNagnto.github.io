@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corebound Save Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e12; --surface:#10161d; --surface-2:#151d25;
+    --border:#1e2933; --border-bright:#2a3844;
+    --text:#e4ecf2; --text-dim:#7c8b99; --text-faint:#4c5964;
+    --accent:#4dd8c4; --accent-dim:#2a6e64;
+    --warn:#f0a857; --danger:#f0616b;
+    --mono:'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    --display:'Chakra Petch', ui-sans-serif, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(ellipse 900px 500px at 15% -10%, rgba(77,216,196,0.08), transparent), var(--bg);
+    color:var(--text); font-family:var(--mono); font-size:14px; line-height:1.5; min-height:100vh;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 80px;}
+
+  header{margin-bottom:28px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.18em;color:var(--accent);text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .eyebrow::before{content:'';width:6px;height:6px;background:var(--accent);box-shadow:0 0 8px var(--accent);display:inline-block;}
+  h1{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:0.01em;margin:0 0 6px;}
+  .sub{color:var(--text-dim);font-size:13px;max-width:62ch;}
+  .sub b{color:var(--text);font-weight:600;}
+
+  .lang-switch{display:flex;flex-shrink:0;border:1px solid var(--border-bright);border-radius:2px;overflow:hidden;}
+  .lang-switch button{font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:0.04em;padding:8px 14px;border:none;background:var(--surface-2);color:var(--text-dim);cursor:pointer;}
+  .lang-switch button + button{border-left:1px solid var(--border-bright);}
+  .lang-switch button.active{background:var(--accent);color:#06201c;}
+  .lang-switch button:hover:not(.active){color:var(--text);}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:3px;margin-bottom:18px;overflow:hidden;}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap;}
+  .panel-title{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-dim);}
+  .panel-body{padding:16px;}
+
+  .drop{border:1.5px dashed var(--border-bright);border-radius:3px;padding:36px 20px;text-align:center;cursor:pointer;transition:border-color .15s, background .15s;}
+  .drop:hover, .drop.drag{border-color:var(--accent);background:rgba(77,216,196,0.04);}
+  .drop-title{font-family:var(--display);font-weight:600;font-size:15px;margin-bottom:4px;}
+  .drop-sub{color:var(--text-faint);font-size:12px;}
+  input[type=file]{display:none;}
+
+  .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+  .status-cell{background:var(--surface);padding:10px 14px;}
+  .status-label{font-size:10px;letter-spacing:0.08em;color:var(--text-faint);text-transform:uppercase;margin-bottom:4px;}
+  .status-value{font-size:14px;color:var(--text);font-weight:500;word-break:break-all;}
+  .status-value.ok{color:var(--accent);}
+  .status-value.bad{color:var(--danger);}
+
+  .fieldnote{color:var(--text-faint);font-size:12px;line-height:1.7;margin-bottom:14px;}
+  .fieldnote b{color:var(--warn);}
+
+  .fgroup{margin-bottom:14px;}
+  .fgroup-title{font-size:10px;letter-spacing:0.1em;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+  .frow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 2px;}
+  .frow-label{font-size:12px;color:var(--text-dim);}
+  .frow-label small{display:block;color:var(--text-faint);font-size:10px;}
+  .num-input{width:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:7px 9px;border-radius:2px;text-align:right;}
+  .num-input:focus{outline:none;border-color:var(--accent);}
+  .num-input.clamped{border-color:var(--warn);color:var(--warn);}
+
+  textarea.hexarea{
+    width:100%;height:340px;background:var(--bg);border:1px solid var(--border);color:var(--text-dim);
+    font-family:var(--mono);font-size:12px;line-height:1.6;padding:12px;border-radius:2px;resize:vertical;white-space:pre;
+  }
+  textarea.hexarea:focus{outline:none;border-color:var(--accent);}
+  .hex-hint{color:var(--text-faint);font-size:11px;margin-top:8px;}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  button{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:0.02em;padding:10px 18px;border-radius:2px;border:1px solid var(--border-bright);background:var(--surface-2);color:var(--text);cursor:pointer;transition:border-color .15s, background .15s, color .15s;}
+  button:hover{border-color:var(--accent);color:var(--accent);}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#06201c;}
+  button.primary:hover{background:#63e3d1;color:#06201c;}
+  button:disabled{opacity:0.35;cursor:not-allowed;}
+  button:disabled:hover{border-color:var(--border-bright);color:var(--text);}
+
+  .filename-input{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:9px 10px;border-radius:2px;flex:1;min-width:180px;}
+  .filename-input:focus{outline:none;border-color:var(--accent);}
+
+  .msg{font-size:12px;color:var(--text-dim);margin-top:10px;}
+  .msg.ok{color:var(--accent);}
+  .msg.bad{color:var(--danger);}
+  .hidden{display:none !important;}
+
+  footer{margin-top:36px;color:var(--text-faint);font-size:11px;line-height:1.7;border-top:1px solid var(--border);padding-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">Corebound / Unofficial Tool</div>
+      <h1 data-i18n="title">Save Editor</h1>
+      <p class="sub" data-i18n="subtitle" data-i18n-html="true"></p>
+    </div>
+    <div class="lang-switch">
+      <button id="langEn" data-lang="en">EN</button>
+      <button id="langZh" data-lang="zh">中文</button>
+    </div>
+  </header>
+
+  <!-- 1+2. Upload -->
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title" data-i18n="panel1Title">01 — Load Save</span></div>
+    <div class="panel-body">
+      <div class="drop" id="dropzone">
+        <div class="drop-title" data-i18n="dropTitle"></div>
+        <div class="drop-sub" data-i18n="dropSub"></div>
+        <input type="file" id="fileInput" accept=".bin">
+      </div>
+      <div class="msg" id="loadMsg"></div>
+    </div>
+  </div>
+
+  <div id="editorArea" class="hidden">
+
+    <!-- status -->
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title" data-i18n="panel2Title">02 — File Info</span></div>
+      <div class="panel-body">
+        <div class="status-grid">
+          <div class="status-cell"><div class="status-label" data-i18n="stCipherLabel">Cipher ID</div><div class="status-value" id="stCipher">—</div></div>
+          <div class="status-cell"><div class="status-label" data-i18n="stLenLabel">Length</div><div class="status-value" id="stLen">—</div></div>
+          <div class="status-cell"><div class="status-label" data-i18n="stChecksumLabel">Checksum</div><div class="status-value" id="stChecksum">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. named fields -->
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title" data-i18n="panel3Title">03 — Named Fields</span></div>
+      <div class="panel-body">
+        <p class="fieldnote" data-i18n="fieldNote" data-i18n-html="true"></p>
+        <div id="fieldsArea"></div>
+        <p class="msg hidden" id="noFieldsMsg" data-i18n="noFieldsForType"></p>
+      </div>
+    </div>
+
+    <!-- 4. hex, two-way synced -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title" data-i18n="panel4Title">04 — Hex View</span>
+        <button id="hexApplyBtn" data-i18n="hexApplyBtn">Apply Hex Changes</button>
+      </div>
+      <div class="panel-body">
+        <textarea class="hexarea" id="hexArea" spellcheck="false"></textarea>
+        <p class="hex-hint" data-i18n="hexHint"></p>
+        <div class="msg" id="hexMsg"></div>
+      </div>
+    </div>
+
+    <!-- 5. export -->
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title" data-i18n="panel5Title">05 — Export</span></div>
+      <div class="panel-body">
+        <div class="row">
+          <input class="filename-input" id="outName" value="save-edited.bin">
+          <button class="primary" id="exportBtn" data-i18n="exportBtn">Repack &amp; Download</button>
+          <button id="resetBtn" data-i18n="resetBtn">Reset to Original</button>
+        </div>
+        <p class="msg" id="exportMsg"></p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 6. disclaimer -->
+  <footer data-i18n="footer"></footer>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ---------- i18n ----------
+  const STRINGS = {
+    en: {
+      title: 'Save Editor',
+      subtitle: 'Unpack, edit, and repack a Corebound local save (<b>save-*.bin</b>). The algorithm is reverse-engineered from the game binary and checksum-verified; everything runs in your browser — <b>nothing is uploaded anywhere</b>. Back up the original file before editing.',
+      panel1Title: '01 — Load Save',
+      dropTitle: 'Drag a save file here, or click to choose one',
+      dropSub: 'Usually in the game\u2019s local save folder, named like save-0-\u3008number\u3009.bin',
+      panel2Title: '02 — File Info',
+      stCipherLabel: 'Cipher ID',
+      stLenLabel: 'Plaintext Length',
+      stChecksumLabel: 'Checksum',
+      panel3Title: '03 — Named Fields',
+      fieldNote: 'Every numeric slot from the confirmed record blocks is listed here — not just a curated few. <b>Confirmed</b> = value and meaning verified by diffing two real before/after saves. <b>Position confirmed, meaning unknown</b> = we know exactly where this byte is, we just don\u2019t know what it represents. <b>Unknown slot</b> = same repeating byte pattern as a confirmed block, but which item (if any) it belongs to hasn\u2019t been tested — shown as a raw number with no name attached rather than a guessed one. Anything not listed here at all (units, currencies, goals, crates) isn\u2019t in a block we\u2019ve mapped yet — use the Hex View below for that, at your own risk.',
+      group_meta: 'Save metadata',
+      group_stock: 'Permanent material stockpile (confirmed)',
+      group_tar: 'Tarnished variant — partially confirmed',
+      group_pure: 'Pure variant — partially confirmed',
+      noFieldsForType: 'No confirmed fields for this file type yet (cipher ID doesn\u2019t match a known save-0- file). Use the Hex View below.',
+      panel4Title: '04 — Hex View',
+      hexApplyBtn: 'Apply Hex Changes',
+      hexHint: 'Left column is the offset, middle is the hex bytes, right is the matching text. Only the middle hex section is read back in. Editing here updates the named fields above too, and vice versa. Byte count must stay the same (no inserting or deleting bytes).',
+      panel5Title: '05 — Export',
+      exportBtn: 'Repack &amp; Download',
+      resetBtn: 'Reset to Original',
+      footer: 'Algorithm reverse-engineered from the game binary (libil2cpp.so, IL2CPP metadata v39). Format: [4 bytes cipher id][10 bytes random][encrypted payload][6 bytes checksum], encryption is ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10], byte by byte. Confirmed fields: save timestamp, this-run material pickup counters. This is an unofficial fan tool, unaffiliated with overcurve / Corebound. Use it only to edit your own single-player save.',
+      loadOk: 'Decrypted successfully — checksum matches.',
+      loadBad: 'Decrypted, but the checksum doesn\u2019t match — the file may be corrupted or from a different version of this format. Edit carefully.',
+      loadFail: 'Failed to read file: ',
+      hexBadChars: 'Some of the hex content isn\u2019t valid — please check it and try again.',
+      hexLenMismatch: 'Byte count changed from {a} to {b} — hex edits can\u2019t add or remove bytes, so this wasn\u2019t applied.',
+      hexApplied: 'Hex changes applied.',
+      exportedMsg: 'Downloaded: {name} ({size} bytes). Back up the original before replacing it, then drop this file back into the game\u2019s save folder.',
+      resetDone: 'Reverted to the original file contents.',
+      checksumAuto: 'Recomputed on export',
+    },
+    zh: {
+      title: '存檔編輯器',
+      subtitle: '拆解、編輯、重新封裝 Corebound 的本機存檔（<b>save-*.bin</b>）。演算法逆向自遊戲本體並經校驗碼驗證，全部運算在你的瀏覽器裡完成，<b>不會把存檔上傳到任何伺服器</b>。修改前請自行備份原始檔案。',
+      panel1Title: '01 — 載入存檔',
+      dropTitle: '拖曳存檔到這裡，或點擊選擇檔案',
+      dropSub: '通常在遊戲的本機存檔資料夾裡，檔名長得像 save-0-〈數字〉.bin',
+      panel2Title: '02 — 檔案資訊',
+      stCipherLabel: 'Cipher ID',
+      stLenLabel: '明文長度',
+      stChecksumLabel: '校驗碼',
+      panel3Title: '03 — 具名欄位',
+      fieldNote: '已確認資料區塊裡的「每一個」數值欄位都列在這裡——不是只挑幾個。<b>已確認</b>＝數值和意義都用兩份存檔前後比對驗證過。<b>位置已確認，意義未知</b>＝我們確定這個位元組在哪裡，但不知道它代表什麼。<b>未知欄位</b>＝跟已確認區塊一樣的重複位元組結構，但還沒測出屬於哪個項目（或是否真的屬於任何項目）——顯示成沒有名稱的原始數字，而不是硬掛一個猜的名字上去。完全沒列在這裡的東西（單位、各種貨幣、目標進度、倉庫箱子）代表還沒對應到任何已知區塊，那些請用下面的十六進位檢視，風險自負。',
+      group_meta: '存檔中繼資料',
+      group_stock: '永久材料庫存（已確認）',
+      group_tar: '舊化版本——部分已確認',
+      group_pure: '純化版本——部分已確認',
+      noFieldsForType: '這個檔案類型目前沒有已確認的欄位（cipher ID 對不上已知的 save-0- 格式），請用下面的十六進位檢視。',
+      panel4Title: '04 — 十六進位檢視',
+      hexApplyBtn: '套用十六進位變更',
+      hexHint: '左邊是位移量，中間是十六進位位元組，右邊是對應的文字。只有中間的十六進位部分會被讀取。在這裡改動也會同步更新上面的具名欄位，反之亦然。位元組數量必須跟原本一致（不能新增或刪除位元組）。',
+      panel5Title: '05 — 匯出',
+      exportBtn: '重新封裝並下載',
+      resetBtn: '還原成原始檔案',
+      footer: '演算法逆向自遊戲本體（libil2cpp.so, IL2CPP metadata v39），格式：[4 bytes 版本碼][10 bytes 隨機數][加密後資料][6 bytes 校驗碼]，加密方式為 ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10]，逐位元組。已確認欄位：存檔時間戳、本局材料計數。此為玩家自製工具，與 overcurve / Corebound 官方無關。請只用來編輯你自己的單機存檔。',
+      loadOk: '解密成功，校驗碼吻合。',
+      loadBad: '解密完成，但校驗碼不吻合——檔案可能已損毀或不是這個版本的格式，請小心編輯。',
+      loadFail: '讀取失敗：',
+      hexBadChars: '有一些內容看起來不是合法的十六進位，請檢查後再試一次。',
+      hexLenMismatch: '位元組數量從 {a} 變成 {b}——十六進位模式不能增減長度，已取消套用。',
+      hexApplied: '已套用十六進位變更。',
+      exportedMsg: '已下載：{name}（{size} bytes）。存檔前記得先備份原始檔案，再把這個檔案放回遊戲的存檔資料夾。',
+      resetDone: '已還原成原始檔案內容。',
+      checksumAuto: '匯出時自動重算',
+    }
+  };
+
+  let lang = 'en'; // default English, per explicit instruction — no auto-detect
+
+  function t(key, subs){
+    let s = (STRINGS[lang] && STRINGS[lang][key] != null) ? STRINGS[lang][key] : (STRINGS.en[key] || key);
+    if (subs) for (const k in subs) s = s.replace('{' + k + '}', subs[k]);
+    return s;
+  }
+  function applyStaticI18n(){
+    document.documentElement.lang = (lang === 'zh') ? 'zh-Hant' : 'en';
+    document.title = (lang === 'zh') ? 'Corebound 存檔編輯器' : 'Corebound Save Editor';
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const val = t(key);
+      if (el.getAttribute('data-i18n-html') === 'true') el.innerHTML = val;
+      else el.textContent = val;
+    });
+    $('langEn').classList.toggle('active', lang === 'en');
+    $('langZh').classList.toggle('active', lang === 'zh');
+  }
+  function setLang(l){
+    lang = l;
+    applyStaticI18n();
+    if (plaintext) refreshAll();
+  }
+
+  // ---------- crypto core ----------
+  function decryptSave(bytes){
+    if (bytes.length < 20) throw new Error(t('loadFail') + bytes.length + ' bytes');
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const cipherId = dv.getInt32(0, true);
+    const r = bytes.slice(4, 14);
+    const ciphertext = bytes.slice(14, bytes.length - 6);
+    const storedChecksum = bytes.slice(bytes.length - 6);
+    const plaintext = new Uint8Array(ciphertext.length);
+    const checksum = new Uint8Array(6);
+    for (let i = 0; i < ciphertext.length; i++){
+      const c = ciphertext[i];
+      const key = r[i % 10];
+      plaintext[i] = (c ^ ((Math.floor(i/10)) & 0xFF) ^ (i & 0xFF) ^ key) & 0xFF;
+      checksum[i % 6] = (checksum[i % 6] + c) & 0xFF;
+    }
+    let ok = true;
+    for (let i = 0; i < 6; i++) if (checksum[i] !== storedChecksum[i]) ok = false;
+    return { cipherId, r, plaintext, checksumOk: ok };
+  }
+  function encryptSave(plaintext, cipherId, r){
+    const out = new Uint8Array(4 + 10 + plaintext.length + 6);
+    const dv = new DataView(out.buffer);
+    dv.setInt32(0, cipherId, true);
+    out.set(r, 4);
+    const checksum = new Uint8Array(6);
+    for (let i = 0; i < plaintext.length; i++){
+      const p = plaintext[i];
+      const key = r[i % 10];
+      const c = (p ^ ((Math.floor(i/10)) & 0xFF) ^ (i & 0xFF) ^ key) & 0xFF;
+      out[14 + i] = c;
+      checksum[i % 6] = (checksum[i % 6] + c) & 0xFF;
+    }
+    out.set(checksum, 14 + plaintext.length);
+    return out;
+  }
+  function randomBytes(n){ const a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
+
+  // ---------- known-field schema (verified via before/after diffing of real saves) ----------
+  // Applies only when cipherId === 8 (save-0- files).
+  const MATERIAL_NAMES = ['crawler','dasher','driver','tank','amp','ember','mortar','node','nova','ranger',
+    'surge_crystal','turret','drone','hookshot','hull_shred','leech_core','magnifier','motor','nexus',
+    'overdrive_cell','propeller','radar','shield_unit','spike','spring','core_filter_black','core_filter_blue',
+    'core_filter_cyan','core_filter_green','core_filter_mint','core_filter_orange','core_filter_pink',
+    'core_filter_purple','core_filter_red','core_filter_white','core_filter_yellow','core_fragment','core_inverter'];
+
+  // Permanent stockpile table: base offset + per-material index confirmed by diffing two real
+  // saves (turret 32 -> 50 landed exactly on index 11). Record = 1 flag byte + u32 count.
+  const STOCK_BASE = 995, STOCK_STRIDE = 5;
+  // Two more same-size, same-stride blocks sit right after it (base = STOCK_BASE + 38*5, then +38*5
+  // again). A handful of individual slots in each were diff-confirmed as specific materials; the
+  // rest are UNCONFIRMED — same byte pattern, but we don't actually know which material (if any)
+  // each remaining slot belongs to, so they're shown as raw editable numbers with no name attached
+  // rather than guessed.
+  const TAR_BASE = STOCK_BASE + MATERIAL_NAMES.length * STOCK_STRIDE;   // 1186
+  const PURE_BASE = TAR_BASE + MATERIAL_NAMES.length * STOCK_STRIDE;    // 1376
+  const VARIANT_STRIDE = 5;
+  const TAR_NAMED = { 9:'ranger', 11:'turret', 13:'hookshot', 17:'motor', 19:'overdrive_cell' };
+  const PURE_NAMED = { 11:'turret', 13:'hookshot', 19:'overdrive_cell' };
+  const ORDER_GUESSED = new Set([11]); // turret's slot in tar/pure carries an extra "order guessed" caveat
+
+  const FIELDS = [];
+  FIELDS.push({ key:'ts', en:'Last saved', zh:'上次存檔時間', hint:'confirmed — unix ms', offset:782, size:8, type:'i64', group:'meta' });
+
+  MATERIAL_NAMES.forEach((name, i) => {
+    const off = STOCK_BASE + i * STOCK_STRIDE;
+    FIELDS.push({ key:'stock_flag_'+name, en:name+' — flag', zh:name+'（旗標）', hint:'position confirmed, meaning unknown', offset:off, size:1, type:'u8', group:'stock' });
+    FIELDS.push({ key:'stock_count_'+name, en:name+' — stock', zh:name+'（永久庫存）', hint:'confirmed', offset:off+1, size:4, type:'u32', group:'stock' });
+  });
+
+  for (let i = 0; i < MATERIAL_NAMES.length; i++){
+    const off = TAR_BASE + i * VARIANT_STRIDE;
+    const nm = TAR_NAMED[i];
+    const guessed = ORDER_GUESSED.has(i);
+    FIELDS.push({
+      key:'tar_'+i,
+      en: nm ? (nm + ' (tarnished' + (guessed?', order guessed':'') + ')') : ('Unknown slot (offset 0x'+off.toString(16)+')'),
+      zh: nm ? (nm + '（舊化' + (guessed?'，順序推測':'') + '）') : ('未知欄位（offset 0x'+off.toString(16)+'）'),
+      hint: nm ? 'confirmed via diff' : 'position only — not diff-confirmed, name unknown',
+      offset: off, size:1, type:'u8', group:'tar'
+    });
+  }
+  for (let i = 0; i < MATERIAL_NAMES.length; i++){
+    const off = PURE_BASE + i * VARIANT_STRIDE;
+    const nm = PURE_NAMED[i];
+    const guessed = ORDER_GUESSED.has(i);
+    FIELDS.push({
+      key:'pure_'+i,
+      en: nm ? (nm + ' (pure' + (guessed?', order guessed':'') + ')') : ('Unknown slot (offset 0x'+off.toString(16)+')'),
+      zh: nm ? (nm + '（純化' + (guessed?'，順序推測':'') + '）') : ('未知欄位（offset 0x'+off.toString(16)+'）'),
+      hint: nm ? 'confirmed via diff' : 'position only — not diff-confirmed, name unknown',
+      offset: off, size:1, type:'u8', group:'pure'
+    });
+  }
+
+  const KNOWN_FIELDS = { 8: FIELDS };
+  const GROUP_ORDER = ['meta','stock','tar','pure'];
+  const TYPE_RANGE = { u8:{min:0,max:255}, u32:{min:0,max:4294967295}, i32:{min:0,max:2147483647}, i64:{min:0n,max:9223372036854775807n} };
+
+  function readField(pt, f){
+    const dv = new DataView(pt.buffer, pt.byteOffset, pt.byteLength);
+    if (f.type === 'u8') return pt[f.offset];
+    if (f.type === 'u32') return dv.getUint32(f.offset, true);
+    if (f.type === 'i32') return dv.getInt32(f.offset, true);
+    if (f.type === 'i64') return dv.getBigInt64(f.offset, true);
+  }
+  function writeField(pt, f, value){
+    const dv = new DataView(pt.buffer, pt.byteOffset, pt.byteLength);
+    const range = TYPE_RANGE[f.type];
+    if (f.type === 'i64'){
+      let v = BigInt(value);
+      if (v < range.min) v = range.min;
+      if (v > range.max) v = range.max;
+      dv.setBigInt64(f.offset, v, true);
+      return v;
+    } else {
+      let v = Math.trunc(Number(value));
+      if (v < range.min) v = range.min;
+      if (v > range.max) v = range.max;
+      if (f.type === 'u8') pt[f.offset] = v;
+      else if (f.type === 'u32') dv.setUint32(f.offset, v, true);
+      else dv.setInt32(f.offset, v, true);
+      return v;
+    }
+  }
+
+  // ---------- state ----------
+  let originalBytes = null, originalName = '', cipherId = 8, rBytes = null, plaintext = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function loadFile(file){
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const bytes = new Uint8Array(reader.result);
+        const res = decryptSave(bytes);
+        originalBytes = bytes; originalName = file.name;
+        cipherId = res.cipherId; rBytes = res.r; plaintext = res.plaintext.slice();
+
+        $('loadMsg').textContent = res.checksumOk ? t('loadOk') : t('loadBad');
+        $('loadMsg').className = 'msg ' + (res.checksumOk ? 'ok' : 'bad');
+        $('editorArea').classList.remove('hidden');
+        $('outName').value = file.name.replace(/\.bin$/i, '') + '-edited.bin';
+        refreshAll();
+      } catch (e) {
+        $('loadMsg').textContent = t('loadFail') + e.message;
+        $('loadMsg').className = 'msg bad';
+        $('editorArea').classList.add('hidden');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function refreshAll(){ renderStatus(); renderFields(); renderHex(); }
+
+  function renderStatus(){
+    $('stCipher').textContent = cipherId;
+    $('stLen').textContent = plaintext.length + ' bytes';
+    $('stChecksum').textContent = t('checksumAuto');
+    $('stChecksum').className = 'status-value ok';
+  }
+
+  function renderFields(){
+    const area = $('fieldsArea');
+    area.innerHTML = '';
+    const fields = KNOWN_FIELDS[cipherId] || [];
+    $('noFieldsMsg').classList.toggle('hidden', fields.length > 0);
+    if (!fields.length) return;
+
+    GROUP_ORDER.forEach(groupKey => {
+      const groupFields = fields.filter(f => f.group === groupKey);
+      if (!groupFields.length) return;
+
+      const g = document.createElement('div');
+      g.className = 'fgroup';
+      const title = document.createElement('div');
+      title.className = 'fgroup-title';
+      title.textContent = t('group_' + groupKey);
+      g.appendChild(title);
+
+      groupFields.forEach(f => {
+        const val = readField(plaintext, f);
+        const displayVal = f.type === 'i64' ? val.toString() : val;
+        const row = document.createElement('div');
+        row.className = 'frow';
+        row.innerHTML = `
+          <div class="frow-label">${lang==='zh'?f.zh:f.en}${f.hint?'<small>'+f.hint+'</small>':''}</div>
+          <input class="num-input" type="text" inputmode="numeric" data-field-key="${f.key}" value="${displayVal}">
+        `;
+        g.appendChild(row);
+        const input = row.querySelector('input');
+        input.addEventListener('change', () => {
+          const raw = input.value.trim();
+          try {
+            const applied = writeField(plaintext, f, f.type === 'i64' ? BigInt(raw || '0') : Number(raw || '0'));
+            const displayVal2 = f.type === 'i64' ? applied.toString() : applied;
+            input.classList.toggle('clamped', displayVal2.toString() !== raw);
+            input.value = displayVal2;
+            renderHex(); // keep hex view in sync
+          } catch(e){ input.classList.add('clamped'); }
+        });
+      });
+      area.appendChild(g);
+    });
+  }
+
+  function renderHex(){
+    const lines = [];
+    for (let off = 0; off < plaintext.length; off += 16){
+      const chunk = plaintext.slice(off, off + 16);
+      const hex = Array.from(chunk).map(b => b.toString(16).padStart(2,'0')).join(' ');
+      const ascii = Array.from(chunk).map(b => (b >= 0x20 && b <= 0x7E) ? String.fromCharCode(b) : '.').join('');
+      lines.push(off.toString(16).padStart(8,'0') + '  ' + hex.padEnd(16*3-1,' ') + '  ' + ascii);
+    }
+    $('hexArea').value = lines.join('\n');
+  }
+
+  function applyHexEdit(){
+    const text = $('hexArea').value;
+    const lines = text.split('\n');
+    const bytes = [];
+    let ok = true;
+    for (const line of lines){
+      const m = line.match(/^[0-9a-fA-F]{8}\s\s(.{1,47})\s\s/);
+      const hexPart = m ? m[1] : line.slice(10, 57);
+      const tokens = hexPart.trim().split(/\s+/).filter(Boolean);
+      for (const tkn of tokens){
+        if (!/^[0-9a-fA-F]{1,2}$/.test(tkn)){ ok = false; continue; }
+        bytes.push(parseInt(tkn, 16));
+      }
+    }
+    if (!ok){ $('hexMsg').textContent = t('hexBadChars'); $('hexMsg').className = 'msg bad'; return; }
+    if (bytes.length !== plaintext.length){
+      $('hexMsg').textContent = t('hexLenMismatch', {a: plaintext.length, b: bytes.length});
+      $('hexMsg').className = 'msg bad';
+      return;
+    }
+    plaintext = new Uint8Array(bytes);
+    $('hexMsg').textContent = t('hexApplied');
+    $('hexMsg').className = 'msg ok';
+    renderStatus();
+    renderFields(); // keep named fields in sync with hex edits
+  }
+
+  function exportFile(){
+    const r = randomBytes(10);
+    const out = encryptSave(plaintext, cipherId, r);
+    const blob = new Blob([out], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    let name = $('outName').value.trim() || 'save-edited.bin';
+    if (!name.toLowerCase().endsWith('.bin')) name += '.bin';
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    $('exportMsg').textContent = t('exportedMsg', {name, size: out.length});
+    $('exportMsg').className = 'msg ok';
+  }
+
+  function resetToOriginal(){
+    if (!originalBytes) return;
+    const res = decryptSave(originalBytes);
+    cipherId = res.cipherId; rBytes = res.r; plaintext = res.plaintext.slice();
+    refreshAll();
+    $('loadMsg').textContent = t('resetDone');
+    $('loadMsg').className = 'msg ok';
+  }
+
+  // ---------- wiring ----------
+  const dz = $('dropzone'), fi = $('fileInput');
+  dz.addEventListener('click', () => fi.click());
+  fi.addEventListener('change', (e) => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+  ['dragover','dragenter'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('drag'); }));
+  dz.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+
+  $('hexApplyBtn').addEventListener('click', applyHexEdit);
+  $('exportBtn').addEventListener('click', exportFile);
+  $('resetBtn').addEventListener('click', resetToOriginal);
+  $('langEn').addEventListener('click', () => setLang('en'));
+  $('langZh').addEventListener('click', () => setLang('zh'));
+
+  applyStaticI18n();
+})();
+</script>
+</body>
+</html>
