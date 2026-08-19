@@ -22,13 +22,13 @@
     background: radial-gradient(ellipse 900px 500px at 15% -10%, rgba(77,216,196,0.08), transparent), var(--bg);
     color:var(--text); font-family:var(--mono); font-size:14px; line-height:1.5; min-height:100vh;
   }
-  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 80px;}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 20px 80px;}
 
   header{margin-bottom:28px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
   .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.18em;color:var(--accent);text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:8px;}
   .eyebrow::before{content:'';width:6px;height:6px;background:var(--accent);box-shadow:0 0 8px var(--accent);display:inline-block;}
   h1{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:0.01em;margin:0 0 6px;}
-  .sub{color:var(--text-dim);font-size:13px;max-width:62ch;}
+  .sub{color:var(--text-dim);font-size:13px;max-width:70ch;}
   .sub b{color:var(--text);font-weight:600;}
 
   .lang-switch{display:flex;flex-shrink:0;border:1px solid var(--border-bright);border-radius:2px;overflow:hidden;}
@@ -57,8 +57,9 @@
 
   .fieldnote{color:var(--text-faint);font-size:12px;line-height:1.7;margin-bottom:14px;}
   .fieldnote b{color:var(--warn);}
+  .fieldnote.verified b{color:var(--accent);}
 
-  .fgroup{margin-bottom:14px;}
+  .fgroup{margin-bottom:18px;}
   .fgroup-title{font-size:10px;letter-spacing:0.1em;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);}
   .frow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 2px;}
   .frow-label{font-size:12px;color:var(--text-dim);}
@@ -66,6 +67,27 @@
   .num-input{width:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:7px 9px;border-radius:2px;text-align:right;}
   .num-input:focus{outline:none;border-color:var(--accent);}
   .num-input.clamped{border-color:var(--warn);color:var(--warn);}
+
+  /* inventory grid: quality (tier) as columns, material as rows */
+  .grid-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:2px;}
+  table.invgrid{border-collapse:collapse;width:100%;min-width:900px;font-size:11.5px;}
+  table.invgrid th, table.invgrid td{border:1px solid var(--border);padding:0;}
+  table.invgrid thead th{background:var(--surface-2);color:var(--text-dim);font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:0.03em;padding:8px 6px;text-align:center;position:sticky;top:0;z-index:1;}
+  table.invgrid thead th.matcol{text-align:left;padding-left:10px;min-width:150px;position:sticky;left:0;z-index:2;background:var(--surface-2);}
+  table.invgrid tbody th{text-align:left;padding:6px 10px;font-weight:400;color:var(--text-dim);background:var(--surface);position:sticky;left:0;white-space:nowrap;}
+  table.invgrid tbody th .idx{color:var(--text-faint);margin-right:5px;}
+  table.invgrid tbody th .guessname{color:var(--text-faint);font-style:italic;}
+  table.invgrid tbody tr:nth-child(even) th, table.invgrid tbody tr:nth-child(even) td{background:rgba(255,255,255,0.015);}
+  .invcell{display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:4px 5px;}
+  .invcell input.inv-count{width:100%;min-width:66px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11.5px;padding:4px 5px;border-radius:2px;text-align:right;}
+  .invcell input.inv-count:focus{outline:none;border-color:var(--accent);}
+  .invcell input.inv-count.clamped{border-color:var(--warn);color:var(--warn);}
+  .invcell .flagrow{display:flex;gap:3px;justify-content:flex-end;align-items:center;}
+  .invcell .flagrow label{display:flex;align-items:center;gap:1px;color:var(--text-faint);font-size:9px;cursor:pointer;}
+  .invcell .flagrow input[type=checkbox]{width:10px;height:10px;margin:0;accent-color:var(--accent-dim);cursor:pointer;}
+  .grid-toolbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text-faint);}
+  .grid-toolbar label{display:flex;align-items:center;gap:5px;cursor:pointer;}
+  .grid-toolbar input[type=checkbox]{accent-color:var(--accent);cursor:pointer;}
 
   textarea.hexarea{
     width:100%;height:340px;background:var(--bg);border:1px solid var(--border);color:var(--text-dim);
@@ -135,20 +157,35 @@
       </div>
     </div>
 
-    <!-- 3. named fields -->
+    <!-- meta fields -->
     <div class="panel">
-      <div class="panel-head"><span class="panel-title" data-i18n="panel3Title">03 — Named Fields</span></div>
+      <div class="panel-head"><span class="panel-title" data-i18n="panelMetaTitle">03 — Save Metadata</span></div>
       <div class="panel-body">
-        <p class="fieldnote" data-i18n="fieldNote" data-i18n-html="true"></p>
-        <div id="fieldsArea"></div>
-        <p class="msg hidden" id="noFieldsMsg" data-i18n="noFieldsForType"></p>
+        <div id="metaArea"></div>
       </div>
     </div>
 
-    <!-- 4. hex, two-way synced -->
+    <!-- inventory grid -->
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title" data-i18n="panelInvTitle">04 — Material Inventory (7 tiers × 38 materials)</span></div>
+      <div class="panel-body">
+        <p class="fieldnote verified" data-i18n="invNoteVerified" data-i18n-html="true"></p>
+        <p class="fieldnote" data-i18n="invNoteUnverified" data-i18n-html="true"></p>
+        <div class="grid-toolbar">
+          <label><input type="checkbox" id="showFlags"> <span data-i18n="showFlagsLabel">Show flag bits (advanced)</span></label>
+          <label><input type="checkbox" id="showRawNames"> <span data-i18n="showRawLabel">Show slot index only (hide guessed names)</span></label>
+        </div>
+        <div class="grid-scroll">
+          <table class="invgrid" id="invGrid"></table>
+        </div>
+        <p class="msg hidden" id="noGridMsg" data-i18n="noFieldsForType"></p>
+      </div>
+    </div>
+
+    <!-- hex, two-way synced -->
     <div class="panel">
       <div class="panel-head">
-        <span class="panel-title" data-i18n="panel4Title">04 — Hex View</span>
+        <span class="panel-title" data-i18n="panel4Title">05 — Hex View</span>
         <button id="hexApplyBtn" data-i18n="hexApplyBtn">Apply Hex Changes</button>
       </div>
       <div class="panel-body">
@@ -158,9 +195,9 @@
       </div>
     </div>
 
-    <!-- 5. export -->
+    <!-- export -->
     <div class="panel">
-      <div class="panel-head"><span class="panel-title" data-i18n="panel5Title">05 — Export</span></div>
+      <div class="panel-head"><span class="panel-title" data-i18n="panel5Title">06 — Export</span></div>
       <div class="panel-body">
         <div class="row">
           <input class="filename-input" id="outName" value="save-edited.bin">
@@ -173,7 +210,7 @@
 
   </div>
 
-  <!-- 6. disclaimer -->
+  <!-- disclaimer -->
   <footer data-i18n="footer"></footer>
 
 </div>
@@ -194,20 +231,20 @@
       stCipherLabel: 'Cipher ID',
       stLenLabel: 'Plaintext Length',
       stChecksumLabel: 'Checksum',
-      panel3Title: '03 — Named Fields',
-      fieldNote: 'Every numeric slot from the confirmed record blocks is listed here — not just a curated few. <b>Confirmed</b> = value and meaning verified by diffing two real before/after saves. <b>Position confirmed, meaning unknown</b> = we know exactly where this byte is, we just don\u2019t know what it represents. <b>Unknown slot</b> = same repeating byte pattern as a confirmed block, but which item (if any) it belongs to hasn\u2019t been tested — shown as a raw number with no name attached rather than a guessed one. Anything not listed here at all (units, currencies, goals, crates) isn\u2019t in a block we\u2019ve mapped yet — use the Hex View below for that, at your own risk.',
-      group_meta: 'Save metadata',
-      group_stock: 'Permanent material stockpile (confirmed)',
-      group_tar: 'Tarnished variant — partially confirmed',
-      group_pure: 'Pure variant — partially confirmed',
-      noFieldsForType: 'No confirmed fields for this file type yet (cipher ID doesn\u2019t match a known save-0- file). Use the Hex View below.',
-      panel4Title: '04 — Hex View',
+      panelMetaTitle: '03 — Save Metadata',
+      panelInvTitle: '04 — Material Inventory (7 tiers \u00D7 38 materials)',
+      invNoteVerified: '<b>Structurally confirmed</b> (cross-checked on two independent real saves of different sizes): starting at byte offset <b>995</b>, a table of <b>266 records</b> (7 rarity tiers \u00D7 38 materials), 5 bytes each \u2014 1 flag byte + a 4-byte little-endian count. The 7 tier names (Scrap, Tarnished, Pure, Toxic, Frozen, Geared, Magmatic) come directly from the game\u2019s compiled metadata (the <code>et</code> enum), not a guess.',
+      invNoteUnverified: '<b>Not verified:</b> which material name belongs to which of the 38 row positions. The row labels below are carried over from the material name list found in dr-0- files, in that file\u2019s order \u2014 there is currently no evidence that order matches the order used in this table. Treat the names as a rough guess; the tier (column) and slot position (row index) are what\u2019s actually confirmed. Toggle "slot index only" if you\u2019d rather not see a name that might be wrong.',
+      showFlagsLabel: 'Show flag bits (advanced)',
+      showRawLabel: 'Show slot index only (hide guessed names)',
+      noFieldsForType: 'This file is shorter than the inventory table region \u2014 the grid can\u2019t be shown for this file.',
+      panel4Title: '05 — Hex View',
       hexApplyBtn: 'Apply Hex Changes',
-      hexHint: 'Left column is the offset, middle is the hex bytes, right is the matching text. Only the middle hex section is read back in. Editing here updates the named fields above too, and vice versa. Byte count must stay the same (no inserting or deleting bytes).',
-      panel5Title: '05 — Export',
+      hexHint: 'Left column is the offset, middle is the hex bytes, right is the matching text. Only the middle hex section is read back in. Editing here updates the fields above too, and vice versa. Byte count must stay the same (no inserting or deleting bytes).',
+      panel5Title: '06 — Export',
       exportBtn: 'Repack &amp; Download',
       resetBtn: 'Reset to Original',
-      footer: 'Algorithm reverse-engineered from the game binary (libil2cpp.so, IL2CPP metadata v39). Format: [4 bytes cipher id][10 bytes random][encrypted payload][6 bytes checksum], encryption is ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10], byte by byte. Confirmed fields: save timestamp, this-run material pickup counters. This is an unofficial fan tool, unaffiliated with overcurve / Corebound. Use it only to edit your own single-player save.',
+      footer: 'Algorithm reverse-engineered from the game binary (libil2cpp.so, IL2CPP metadata v39). Format: [4 bytes cipher id][10 bytes random][encrypted payload][6 bytes checksum], encryption is ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10], byte by byte. Confirmed: save timestamp offset, and the 7\u00D738 material record table structure (offset, record width, tier grouping) \u2014 cross-checked on multiple real save files. Not confirmed: which material name maps to which row. This is an unofficial fan tool, unaffiliated with overcurve / Corebound. Use it only to edit your own single-player save.',
       loadOk: 'Decrypted successfully — checksum matches.',
       loadBad: 'Decrypted, but the checksum doesn\u2019t match — the file may be corrupted or from a different version of this format. Edit carefully.',
       loadFail: 'Failed to read file: ',
@@ -217,6 +254,8 @@
       exportedMsg: 'Downloaded: {name} ({size} bytes). Back up the original before replacing it, then drop this file back into the game\u2019s save folder.',
       resetDone: 'Reverted to the original file contents.',
       checksumAuto: 'Recomputed on export',
+      metaTsLabel: 'Last saved',
+      metaTsHint: 'confirmed — unix ms',
     },
     zh: {
       title: '存檔編輯器',
@@ -228,20 +267,20 @@
       stCipherLabel: 'Cipher ID',
       stLenLabel: '明文長度',
       stChecksumLabel: '校驗碼',
-      panel3Title: '03 — 具名欄位',
-      fieldNote: '已確認資料區塊裡的「每一個」數值欄位都列在這裡——不是只挑幾個。<b>已確認</b>＝數值和意義都用兩份存檔前後比對驗證過。<b>位置已確認，意義未知</b>＝我們確定這個位元組在哪裡，但不知道它代表什麼。<b>未知欄位</b>＝跟已確認區塊一樣的重複位元組結構，但還沒測出屬於哪個項目（或是否真的屬於任何項目）——顯示成沒有名稱的原始數字，而不是硬掛一個猜的名字上去。完全沒列在這裡的東西（單位、各種貨幣、目標進度、倉庫箱子）代表還沒對應到任何已知區塊，那些請用下面的十六進位檢視，風險自負。',
-      group_meta: '存檔中繼資料',
-      group_stock: '永久材料庫存（已確認）',
-      group_tar: '舊化版本——部分已確認',
-      group_pure: '純化版本——部分已確認',
-      noFieldsForType: '這個檔案類型目前沒有已確認的欄位（cipher ID 對不上已知的 save-0- 格式），請用下面的十六進位檢視。',
-      panel4Title: '04 — 十六進位檢視',
+      panelMetaTitle: '03 — 存檔中繼資料',
+      panelInvTitle: '04 — 材料庫存（7品階 × 38材料）',
+      invNoteVerified: '<b>結構已確認</b>（在兩份大小不同的真實存檔上交叉驗證過）：從 byte offset <b>995</b> 開始，一張 <b>266筆記錄</b>（7品階 × 38材料）的表，每筆 5 bytes——1 byte 旗標 + 4 byte little-endian 數量。7 個品階名稱（Scrap、Tarnished、Pure、Toxic、Frozen、Geared、Magmatic）直接來自遊戲編譯後的 metadata（<code>et</code> enum），不是猜的。',
+      invNoteUnverified: '<b>尚未驗證：</b>38個材料名稱哪個對應哪一列。下面列出的材料名稱是沿用 dr-0- 檔案裡字串表的順序，目前沒有證據證明那個順序跟這張表的順序一致，名稱僅供參考、可能是錯的。真正確認的是品階（欄）跟格子位置（列索引）。不想看到可能錯誤的名稱可以切換成只顯示格子編號。',
+      showFlagsLabel: '顯示旗標位元（進階）',
+      showRawLabel: '只顯示格子編號（隱藏推測名稱）',
+      noFieldsForType: '這份檔案長度不夠到inventory表格範圍，無法顯示這張表格。',
+      panel4Title: '05 — 十六進位檢視',
       hexApplyBtn: '套用十六進位變更',
-      hexHint: '左邊是位移量，中間是十六進位位元組，右邊是對應的文字。只有中間的十六進位部分會被讀取。在這裡改動也會同步更新上面的具名欄位，反之亦然。位元組數量必須跟原本一致（不能新增或刪除位元組）。',
-      panel5Title: '05 — 匯出',
+      hexHint: '左邊是位移量，中間是十六進位位元組，右邊是對應的文字。只有中間的十六進位部分會被讀取。在這裡改動也會同步更新上面的欄位，反之亦然。位元組數量必須跟原本一致（不能新增或刪除位元組）。',
+      panel5Title: '06 — 匯出',
       exportBtn: '重新封裝並下載',
       resetBtn: '還原成原始檔案',
-      footer: '演算法逆向自遊戲本體（libil2cpp.so, IL2CPP metadata v39），格式：[4 bytes 版本碼][10 bytes 隨機數][加密後資料][6 bytes 校驗碼]，加密方式為 ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10]，逐位元組。已確認欄位：存檔時間戳、本局材料計數。此為玩家自製工具，與 overcurve / Corebound 官方無關。請只用來編輯你自己的單機存檔。',
+      footer: '演算法逆向自遊戲本體（libil2cpp.so, IL2CPP metadata v39），格式：[4 bytes 版本碼][10 bytes 隨機數][加密後資料][6 bytes 校驗碼]，加密方式為 ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10]，逐位元組。已確認：存檔時間戳位移、7×38材料記錄表的結構（位移、記錄寬度、品階分組）——在多份真實存檔上交叉驗證過。尚未確認：哪個材料名稱對應哪一列。此為玩家自製工具，與 overcurve / Corebound 官方無關。請只用來編輯你自己的單機存檔。',
       loadOk: '解密成功，校驗碼吻合。',
       loadBad: '解密完成，但校驗碼不吻合——檔案可能已損毀或不是這個版本的格式，請小心編輯。',
       loadFail: '讀取失敗：',
@@ -251,6 +290,8 @@
       exportedMsg: '已下載：{name}（{size} bytes）。存檔前記得先備份原始檔案，再把這個檔案放回遊戲的存檔資料夾。',
       resetDone: '已還原成原始檔案內容。',
       checksumAuto: '匯出時自動重算',
+      metaTsLabel: '上次存檔時間',
+      metaTsHint: '已確認 — unix ms',
     }
   };
 
@@ -279,7 +320,7 @@
     if (plaintext) refreshAll();
   }
 
-  // ---------- crypto core ----------
+  // ---------- crypto core (verified via checksum round-trip on real files) ----------
   function decryptSave(bytes){
     if (bytes.length < 20) throw new Error(t('loadFail') + bytes.length + ' bytes');
     const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -317,90 +358,56 @@
   }
   function randomBytes(n){ const a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
 
-  // ---------- known-field schema (verified via before/after diffing of real saves) ----------
-  // Applies only when cipherId === 8 (save-0- files).
+  // ---------- inventory table schema ----------
+  // Base offset, tier count, material count, record stride: STRUCTURALLY CONFIRMED
+  // by cross-diffing 2 independent real save-0- files of different sizes (995..2325
+  // stayed identical both times, flag byte valid 0/1 across all 266 records, boundary
+  // broke exactly at record 266 = 7*38 both times).
+  const INV_BASE = 995;
+  const RECORD_SIZE = 5; // 1 byte flags + 4 byte u32 count
+  // Tier names: verified — pulled directly from the game's compiled et__Enum (il2cpp.h),
+  // not translated/guessed.
+  const TIERS = ['Scrap','Tarnished','Pure','Toxic','Frozen','Geared','Magmatic'];
+  // Material name list: UNVERIFIED order. Carried over from the dr-0- string table
+  // (handoff doc 2.7). No evidence yet that this order matches this table's row order.
   const MATERIAL_NAMES = ['crawler','dasher','driver','tank','amp','ember','mortar','node','nova','ranger',
     'surge_crystal','turret','drone','hookshot','hull_shred','leech_core','magnifier','motor','nexus',
     'overdrive_cell','propeller','radar','shield_unit','spike','spring','core_filter_black','core_filter_blue',
     'core_filter_cyan','core_filter_green','core_filter_mint','core_filter_orange','core_filter_pink',
     'core_filter_purple','core_filter_red','core_filter_white','core_filter_yellow','core_fragment','core_inverter'];
+  const N_MATERIALS = MATERIAL_NAMES.length; // 38
 
-  // Permanent stockpile table: base offset + per-material index confirmed by diffing two real
-  // saves (turret 32 -> 50 landed exactly on index 11). Record = 1 flag byte + u32 count.
-  const STOCK_BASE = 995, STOCK_STRIDE = 5;
-  // Two more same-size, same-stride blocks sit right after it (base = STOCK_BASE + 38*5, then +38*5
-  // again). A handful of individual slots in each were diff-confirmed as specific materials; the
-  // rest are UNCONFIRMED — same byte pattern, but we don't actually know which material (if any)
-  // each remaining slot belongs to, so they're shown as raw editable numbers with no name attached
-  // rather than guessed.
-  const TAR_BASE = STOCK_BASE + MATERIAL_NAMES.length * STOCK_STRIDE;   // 1186
-  const PURE_BASE = TAR_BASE + MATERIAL_NAMES.length * STOCK_STRIDE;    // 1376
-  const VARIANT_STRIDE = 5;
-  const TAR_NAMED = { 9:'ranger', 11:'turret', 13:'hookshot', 17:'motor', 19:'overdrive_cell' };
-  const PURE_NAMED = { 11:'turret', 13:'hookshot', 19:'overdrive_cell' };
-  const ORDER_GUESSED = new Set([11]); // turret's slot in tar/pure carries an extra "order guessed" caveat
+  function invOffset(tierIdx, matIdx){ return INV_BASE + (tierIdx * N_MATERIALS + matIdx) * RECORD_SIZE; }
 
-  const FIELDS = [];
-  FIELDS.push({ key:'ts', en:'Last saved', zh:'上次存檔時間', hint:'confirmed — unix ms', offset:782, size:8, type:'i64', group:'meta' });
+  const META_FIELDS = [
+    { key:'ts', labelKey:'metaTsLabel', hintKey:'metaTsHint', offset:782, size:8, type:'i64' }
+  ];
 
-  MATERIAL_NAMES.forEach((name, i) => {
-    const off = STOCK_BASE + i * STOCK_STRIDE;
-    FIELDS.push({ key:'stock_flag_'+name, en:name+' — flag', zh:name+'（旗標）', hint:'position confirmed, meaning unknown', offset:off, size:1, type:'u8', group:'stock' });
-    FIELDS.push({ key:'stock_count_'+name, en:name+' — stock', zh:name+'（永久庫存）', hint:'confirmed', offset:off+1, size:4, type:'u32', group:'stock' });
-  });
-
-  for (let i = 0; i < MATERIAL_NAMES.length; i++){
-    const off = TAR_BASE + i * VARIANT_STRIDE;
-    const nm = TAR_NAMED[i];
-    const guessed = ORDER_GUESSED.has(i);
-    FIELDS.push({
-      key:'tar_'+i,
-      en: nm ? (nm + ' (tarnished' + (guessed?', order guessed':'') + ')') : ('Unknown slot (offset 0x'+off.toString(16)+')'),
-      zh: nm ? (nm + '（舊化' + (guessed?'，順序推測':'') + '）') : ('未知欄位（offset 0x'+off.toString(16)+'）'),
-      hint: nm ? 'confirmed via diff' : 'position only — not diff-confirmed, name unknown',
-      offset: off, size:1, type:'u8', group:'tar'
-    });
-  }
-  for (let i = 0; i < MATERIAL_NAMES.length; i++){
-    const off = PURE_BASE + i * VARIANT_STRIDE;
-    const nm = PURE_NAMED[i];
-    const guessed = ORDER_GUESSED.has(i);
-    FIELDS.push({
-      key:'pure_'+i,
-      en: nm ? (nm + ' (pure' + (guessed?', order guessed':'') + ')') : ('Unknown slot (offset 0x'+off.toString(16)+')'),
-      zh: nm ? (nm + '（純化' + (guessed?'，順序推測':'') + '）') : ('未知欄位（offset 0x'+off.toString(16)+'）'),
-      hint: nm ? 'confirmed via diff' : 'position only — not diff-confirmed, name unknown',
-      offset: off, size:1, type:'u8', group:'pure'
-    });
-  }
-
-  const KNOWN_FIELDS = { 8: FIELDS };
-  const GROUP_ORDER = ['meta','stock','tar','pure'];
   const TYPE_RANGE = { u8:{min:0,max:255}, u32:{min:0,max:4294967295}, i32:{min:0,max:2147483647}, i64:{min:0n,max:9223372036854775807n} };
 
-  function readField(pt, f){
+  function readTyped(pt, offset, type){
     const dv = new DataView(pt.buffer, pt.byteOffset, pt.byteLength);
-    if (f.type === 'u8') return pt[f.offset];
-    if (f.type === 'u32') return dv.getUint32(f.offset, true);
-    if (f.type === 'i32') return dv.getInt32(f.offset, true);
-    if (f.type === 'i64') return dv.getBigInt64(f.offset, true);
+    if (type === 'u8') return pt[offset];
+    if (type === 'u32') return dv.getUint32(offset, true);
+    if (type === 'i32') return dv.getInt32(offset, true);
+    if (type === 'i64') return dv.getBigInt64(offset, true);
   }
-  function writeField(pt, f, value){
+  function writeTyped(pt, offset, type, value){
     const dv = new DataView(pt.buffer, pt.byteOffset, pt.byteLength);
-    const range = TYPE_RANGE[f.type];
-    if (f.type === 'i64'){
+    const range = TYPE_RANGE[type];
+    if (type === 'i64'){
       let v = BigInt(value);
       if (v < range.min) v = range.min;
       if (v > range.max) v = range.max;
-      dv.setBigInt64(f.offset, v, true);
+      dv.setBigInt64(offset, v, true);
       return v;
     } else {
       let v = Math.trunc(Number(value));
       if (v < range.min) v = range.min;
       if (v > range.max) v = range.max;
-      if (f.type === 'u8') pt[f.offset] = v;
-      else if (f.type === 'u32') dv.setUint32(f.offset, v, true);
-      else dv.setInt32(f.offset, v, true);
+      if (type === 'u8') pt[offset] = v;
+      else if (type === 'u32') dv.setUint32(offset, v, true);
+      else dv.setInt32(offset, v, true);
       return v;
     }
   }
@@ -433,7 +440,7 @@
     reader.readAsArrayBuffer(file);
   }
 
-  function refreshAll(){ renderStatus(); renderFields(); renderHex(); }
+  function refreshAll(){ renderStatus(); renderMeta(); renderInvGrid(); renderHex(); }
 
   function renderStatus(){
     $('stCipher').textContent = cipherId;
@@ -442,48 +449,121 @@
     $('stChecksum').className = 'status-value ok';
   }
 
-  function renderFields(){
-    const area = $('fieldsArea');
+  function renderMeta(){
+    const area = $('metaArea');
     area.innerHTML = '';
-    const fields = KNOWN_FIELDS[cipherId] || [];
-    $('noFieldsMsg').classList.toggle('hidden', fields.length > 0);
-    if (!fields.length) return;
-
-    GROUP_ORDER.forEach(groupKey => {
-      const groupFields = fields.filter(f => f.group === groupKey);
-      if (!groupFields.length) return;
-
-      const g = document.createElement('div');
-      g.className = 'fgroup';
-      const title = document.createElement('div');
-      title.className = 'fgroup-title';
-      title.textContent = t('group_' + groupKey);
-      g.appendChild(title);
-
-      groupFields.forEach(f => {
-        const val = readField(plaintext, f);
-        const displayVal = f.type === 'i64' ? val.toString() : val;
-        const row = document.createElement('div');
-        row.className = 'frow';
-        row.innerHTML = `
-          <div class="frow-label">${lang==='zh'?f.zh:f.en}${f.hint?'<small>'+f.hint+'</small>':''}</div>
-          <input class="num-input" type="text" inputmode="numeric" data-field-key="${f.key}" value="${displayVal}">
-        `;
-        g.appendChild(row);
-        const input = row.querySelector('input');
-        input.addEventListener('change', () => {
-          const raw = input.value.trim();
-          try {
-            const applied = writeField(plaintext, f, f.type === 'i64' ? BigInt(raw || '0') : Number(raw || '0'));
-            const displayVal2 = f.type === 'i64' ? applied.toString() : applied;
-            input.classList.toggle('clamped', displayVal2.toString() !== raw);
-            input.value = displayVal2;
-            renderHex(); // keep hex view in sync
-          } catch(e){ input.classList.add('clamped'); }
-        });
+    META_FIELDS.forEach(f => {
+      if (f.offset + f.size > plaintext.length) return;
+      const val = readTyped(plaintext, f.offset, f.type);
+      const displayVal = f.type === 'i64' ? val.toString() : val;
+      const row = document.createElement('div');
+      row.className = 'frow';
+      row.innerHTML = `
+        <div class="frow-label">${t(f.labelKey)}<small>${t(f.hintKey)}</small></div>
+        <input class="num-input" type="text" inputmode="numeric" value="${displayVal}">
+      `;
+      area.appendChild(row);
+      const input = row.querySelector('input');
+      input.addEventListener('change', () => {
+        const raw = input.value.trim();
+        try {
+          const applied = writeTyped(plaintext, f.offset, f.type, f.type === 'i64' ? BigInt(raw || '0') : Number(raw || '0'));
+          const displayVal2 = f.type === 'i64' ? applied.toString() : applied;
+          input.classList.toggle('clamped', displayVal2.toString() !== raw);
+          input.value = displayVal2;
+          renderHex();
+        } catch(e){ input.classList.add('clamped'); }
       });
-      area.appendChild(g);
     });
+  }
+
+  function invGridFits(){ return invOffset(TIERS.length - 1, N_MATERIALS - 1) + RECORD_SIZE <= plaintext.length; }
+
+  function renderInvGrid(){
+    const table = $('invGrid');
+    table.innerHTML = '';
+    $('noGridMsg').classList.toggle('hidden', invGridFits());
+    if (!invGridFits()) return;
+
+    const showFlags = $('showFlags').checked;
+    const showRaw = $('showRawNames').checked;
+
+    const thead = document.createElement('thead');
+    const htr = document.createElement('tr');
+    const matTh = document.createElement('th');
+    matTh.className = 'matcol';
+    matTh.textContent = lang === 'zh' ? '材料 \\ 品階' : 'Material \\ Tier';
+    htr.appendChild(matTh);
+    TIERS.forEach(tier => {
+      const th = document.createElement('th');
+      th.textContent = tier;
+      htr.appendChild(th);
+    });
+    thead.appendChild(htr);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    for (let m = 0; m < N_MATERIALS; m++){
+      const tr = document.createElement('tr');
+      const rowTh = document.createElement('th');
+      if (showRaw){
+        rowTh.innerHTML = `<span class="idx">#${m}</span>`;
+      } else {
+        rowTh.innerHTML = `<span class="idx">#${m}</span><span class="guessname">${MATERIAL_NAMES[m]}</span>`;
+      }
+      tr.appendChild(rowTh);
+
+      for (let tIdx = 0; tIdx < TIERS.length; tIdx++){
+        const off = invOffset(tIdx, m);
+        const flagVal = plaintext[off];
+        const countVal = readTyped(plaintext, off + 1, 'u32');
+        const bit0 = (flagVal & 1) !== 0;
+        const bit1 = (flagVal & 2) !== 0;
+
+        const td = document.createElement('td');
+        const cell = document.createElement('div');
+        cell.className = 'invcell';
+
+        const countInput = document.createElement('input');
+        countInput.className = 'inv-count';
+        countInput.type = 'text';
+        countInput.inputMode = 'numeric';
+        countInput.value = countVal;
+        countInput.title = `offset 0x${(off+1).toString(16)}`;
+        countInput.addEventListener('change', () => {
+          const raw = countInput.value.trim();
+          const applied = writeTyped(plaintext, off + 1, 'u32', Number(raw || '0'));
+          countInput.classList.toggle('clamped', applied.toString() !== raw);
+          countInput.value = applied;
+          renderHex();
+        });
+        cell.appendChild(countInput);
+
+        if (showFlags){
+          const flagRow = document.createElement('div');
+          flagRow.className = 'flagrow';
+          flagRow.innerHTML = `
+            <label title="bit0 (hxo) — meaning not fully confirmed"><input type="checkbox" data-bit="0" ${bit0?'checked':''}>b0</label>
+            <label title="bit1 (hxp) — meaning not fully confirmed"><input type="checkbox" data-bit="1" ${bit1?'checked':''}>b1</label>
+          `;
+          flagRow.querySelectorAll('input[type=checkbox]').forEach(cb => {
+            cb.addEventListener('change', () => {
+              const bit = parseInt(cb.getAttribute('data-bit'), 10);
+              let v = plaintext[off];
+              if (cb.checked) v |= (1 << bit); else v &= ~(1 << bit);
+              plaintext[off] = v & 0xFF;
+              renderHex();
+            });
+          });
+          cell.appendChild(flagRow);
+        }
+
+        td.appendChild(cell);
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
   }
 
   function renderHex(){
@@ -521,7 +601,8 @@
     $('hexMsg').textContent = t('hexApplied');
     $('hexMsg').className = 'msg ok';
     renderStatus();
-    renderFields(); // keep named fields in sync with hex edits
+    renderMeta();
+    renderInvGrid();
   }
 
   function exportFile(){
@@ -561,6 +642,8 @@
   $('resetBtn').addEventListener('click', resetToOriginal);
   $('langEn').addEventListener('click', () => setLang('en'));
   $('langZh').addEventListener('click', () => setLang('zh'));
+  $('showFlags').addEventListener('change', renderInvGrid);
+  $('showRawNames').addEventListener('change', renderInvGrid);
 
   applyStaticI18n();
 })();
