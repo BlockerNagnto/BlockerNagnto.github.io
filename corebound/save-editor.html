@@ -232,9 +232,9 @@
       stLenLabel: 'Plaintext Length',
       stChecksumLabel: 'Checksum',
       panelMetaTitle: '03 — Save Metadata',
-      panelInvTitle: '04 — Material Inventory (7 tiers \u00D7 38 materials)',
-      invNoteVerified: '<b>Structurally confirmed</b> (cross-checked on two independent real saves of different sizes): starting at byte offset <b>995</b>, a table of <b>266 records</b> (7 rarity tiers \u00D7 38 materials), 5 bytes each \u2014 1 flag byte + a 4-byte little-endian count. The 7 tier names (Scrap, Tarnished, Pure, Toxic, Frozen, Geared, Magmatic) come directly from the game\u2019s compiled metadata (the <code>et</code> enum), not a guess.',
-      invNoteUnverified: '<b>Not verified:</b> which material name belongs to which of the 38 row positions. The row labels below are carried over from the material name list found in dr-0- files, in that file\u2019s order \u2014 there is currently no evidence that order matches the order used in this table. Treat the names as a rough guess; the tier (column) and slot position (row index) are what\u2019s actually confirmed. Toggle "slot index only" if you\u2019d rather not see a name that might be wrong.',
+      panelInvTitle: '04 — Material Inventory (8 tiers \u00D7 38 materials)',
+      invNoteVerified: '<b>Structurally confirmed</b> (cross-checked on multiple independent real saves, plus a real in-game fuse transaction diff): starting at byte offset <b>805</b>, a table of <b>304 records</b> (8 rarity tiers \u00D7 38 materials \u2014 Relic is index 0, then Scrap\u2013Magmatic), 5 bytes each \u2014 1 flag byte + a 4-byte little-endian count. Tier names come directly from the game\u2019s compiled metadata (the <code>et</code> enum). Row ordering is now well-supported: a real fuse (Geared motor \u2192 Magmatic motor) landed exactly on row 17 in both tiers, and 9 distinct Relic-tier core filter values matched known real ownership exactly (including a live 3\u21922 diff for cyan).',
+      invNoteUnverified: '<b>Still not 100% verified:</b> not every one of the 38 row names has been individually confirmed \u2014 the list is carried over from the dr-0- string table, and while the overall ordering now has strong supporting evidence (see above), a handful of specific names could still be off. Toggle "slot index only" if you\u2019d rather not see a name that might be wrong.',
       showFlagsLabel: 'Show flag bits (advanced)',
       showRawLabel: 'Show slot index only (hide guessed names)',
       noFieldsForType: 'This file is shorter than the inventory table region \u2014 the grid can\u2019t be shown for this file.',
@@ -268,9 +268,9 @@
       stLenLabel: '明文長度',
       stChecksumLabel: '校驗碼',
       panelMetaTitle: '03 — 存檔中繼資料',
-      panelInvTitle: '04 — 材料庫存（7品階 × 38材料）',
-      invNoteVerified: '<b>結構已確認</b>（在兩份大小不同的真實存檔上交叉驗證過）：從 byte offset <b>995</b> 開始，一張 <b>266筆記錄</b>（7品階 × 38材料）的表，每筆 5 bytes——1 byte 旗標 + 4 byte little-endian 數量。7 個品階名稱（Scrap、Tarnished、Pure、Toxic、Frozen、Geared、Magmatic）直接來自遊戲編譯後的 metadata（<code>et</code> enum），不是猜的。',
-      invNoteUnverified: '<b>尚未驗證：</b>38個材料名稱哪個對應哪一列。下面列出的材料名稱是沿用 dr-0- 檔案裡字串表的順序，目前沒有證據證明那個順序跟這張表的順序一致，名稱僅供參考、可能是錯的。真正確認的是品階（欄）跟格子位置（列索引）。不想看到可能錯誤的名稱可以切換成只顯示格子編號。',
+      panelInvTitle: '04 — 材料庫存（8品階 × 38材料）',
+      invNoteVerified: '<b>結構已確認</b>（在多份真實存檔上交叉驗證過，加上一次真實遊戲內fuse操作的diff）：從 byte offset <b>805</b> 開始，一張 <b>304筆記錄</b>（8品階 × 38材料——Relic是index 0，接著才是Scrap~Magmatic）的表，每筆 5 bytes——1 byte 旗標 + 4 byte little-endian 數量。品階名稱直接來自遊戲編譯後的 metadata（<code>et</code> enum）。列的順序目前有紮實證據支持：一次真實fuse（Geared motor→Magmatic motor）精準落在兩個品階的第17列，加上9個Relic品階的core filter數值跟真實擁有量完全吻合（包括一次cyan的3→2 diff）。',
+      invNoteUnverified: '<b>還沒100%驗證：</b>38個材料名稱不是每一個都個別確認過，這份清單沿用dr-0-字串表的順序，雖然整體順序現在有紮實證據支持（見上），但少數幾個名稱仍可能是錯的。不想看到可能錯誤的名稱可以切換成只顯示格子編號。',
       showFlagsLabel: '顯示旗標位元（進階）',
       showRawLabel: '只顯示格子編號（隱藏推測名稱）',
       noFieldsForType: '這份檔案長度不夠到inventory表格範圍，無法顯示這張表格。',
@@ -363,13 +363,18 @@
   // by cross-diffing 2 independent real save-0- files of different sizes (995..2325
   // stayed identical both times, flag byte valid 0/1 across all 266 records, boundary
   // broke exactly at record 266 = 7*38 both times).
-  const INV_BASE = 995;
+  const INV_BASE = 805;
   const RECORD_SIZE = 5; // 1 byte flags + 4 byte u32 count
-  // Tier names: verified — pulled directly from the game's compiled et__Enum (il2cpp.h),
-  // not translated/guessed.
-  const TIERS = ['Scrap','Tarnished','Pure','Toxic','Frozen','Geared','Magmatic'];
-  // Material name list: UNVERIFIED order. Carried over from the dr-0- string table
-  // (handoff doc 2.7). No evidence yet that this order matches this table's row order.
+  // Tier names: verified — pulled directly from the game's compiled et__Enum (il2cpp.h).
+  // Relic=-1 sits first in the array (index 0), Scrap..Magmatic follow (index 1-7) —
+  // confirmed by diffing a real fuse transaction that changed Relic-tier cyan core
+  // filter count 3->2, landing exactly at offset 940 (record 27 in this 8x38 table).
+  const TIERS = ['Relic','Scrap','Tarnished','Pure','Toxic','Frozen','Geared','Magmatic'];
+  // Material name list: order confirmed via real gameplay diffs — motor (idx17) verified
+  // by a fuse transaction (Geared 20->19, Magmatic 3->4), and 9 Relic-tier core filter
+  // values (idx25-37) matched exactly against known real ownership (blue=0, red=0,
+  // cyan=3, black/green/mint/orange/pink/purple/yellow=1). Not every one of the 38
+  // names has been individually confirmed, but the ordering itself is now well-supported.
   const MATERIAL_NAMES = ['crawler','dasher','driver','tank','amp','ember','mortar','node','nova','ranger',
     'surge_crystal','turret','drone','hookshot','hull_shred','leech_core','magnifier','motor','nexus',
     'overdrive_cell','propeller','radar','shield_unit','spike','spring','core_filter_black','core_filter_blue',
