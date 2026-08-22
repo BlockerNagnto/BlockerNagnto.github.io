@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Corebound Save Editor</title>
+<title>Corebound 1.2 Save Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -67,6 +67,9 @@
   .num-input{width:120px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:13px;padding:7px 9px;border-radius:2px;text-align:right;}
   .num-input:focus{outline:none;border-color:var(--accent);}
   .num-input.clamped{border-color:var(--warn);color:var(--warn);}
+  .frow.unverified .frow-label{color:var(--warn);}
+  .frow.unverified .num-input{border-color:var(--accent-dim);}
+  .frow.unverified .frow-label::before{content:'\26A0  ';}
 
   /* inventory grid: quality (tier) as columns, material as rows */
   .grid-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:2px;}
@@ -82,7 +85,7 @@
   .invcell input.inv-count{width:100%;min-width:66px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11.5px;padding:4px 5px;border-radius:2px;text-align:right;}
   .invcell input.inv-count:focus{outline:none;border-color:var(--accent);}
   .invcell input.inv-count.clamped{border-color:var(--warn);color:var(--warn);}
-  .invcell .flagrow{display:flex;gap:3px;justify-content:flex-end;align-items:center;}
+  .invcell .flagrow{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;}
   .invcell .flagrow label{display:flex;align-items:center;gap:1px;color:var(--text-faint);font-size:9px;cursor:pointer;}
   .invcell .flagrow input[type=checkbox]{width:10px;height:10px;margin:0;accent-color:var(--accent-dim);cursor:pointer;}
   .grid-toolbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text-faint);}
@@ -113,6 +116,14 @@
   .hidden{display:none !important;}
 
   footer{margin-top:36px;color:var(--text-faint);font-size:11px;line-height:1.7;border-top:1px solid var(--border);padding-top:16px;}
+
+  /* dark-mode scrollbars, applied globally so nested scroll areas (grid, textarea) match */
+  ::-webkit-scrollbar{width:11px;height:11px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:6px;border:2px solid var(--bg);}
+  ::-webkit-scrollbar-thumb:hover{background:var(--accent-dim);}
+  ::-webkit-scrollbar-corner{background:var(--bg);}
+  * { scrollbar-color: var(--border-bright) var(--bg); scrollbar-width: thin; }
 </style>
 </head>
 <body>
@@ -162,18 +173,21 @@
       <div class="panel-head"><span class="panel-title" data-i18n="panelMetaTitle">03 — Save Metadata</span></div>
       <div class="panel-body">
         <div id="metaArea"></div>
+        <p class="fieldnote" id="shardNote" data-i18n="metaShardNote" data-i18n-html="true"></p>
       </div>
     </div>
 
     <!-- inventory grid -->
     <div class="panel">
-      <div class="panel-head"><span class="panel-title" data-i18n="panelInvTitle">04 — Material Inventory (7 tiers × 38 materials)</span></div>
+      <div class="panel-head"><span class="panel-title" data-i18n="panelInvTitle">04 — Material Inventory</span></div>
       <div class="panel-body">
         <p class="fieldnote verified" data-i18n="invNoteVerified" data-i18n-html="true"></p>
         <p class="fieldnote" data-i18n="invNoteUnverified" data-i18n-html="true"></p>
         <div class="grid-toolbar">
-          <label><input type="checkbox" id="showFlags"> <span data-i18n="showFlagsLabel">Show flag bits (advanced)</span></label>
-          <label><input type="checkbox" id="showRawNames"> <span data-i18n="showRawLabel">Show slot index only (hide guessed names)</span></label>
+          <label><input type="checkbox" id="showNew"> <span data-i18n="showNewLabel">Show/edit "NEW" badge status</span></label>
+          <label><input type="checkbox" id="hideEmptyRows"> <span data-i18n="hideEmptyLabel">Hide rows that are 0 in every tier</span></label>
+          <button id="markAllNewBtn" data-i18n="markAllNewBtn" class="hidden">Mark everything as NEW</button>
+          <button id="markNoneNewBtn" data-i18n="markNoneNewBtn" class="hidden">Mark everything as NOT new</button>
         </div>
         <div class="grid-scroll">
           <table class="invgrid" id="invGrid"></table>
@@ -232,12 +246,18 @@
       stLenLabel: 'Plaintext Length',
       stChecksumLabel: 'Checksum',
       panelMetaTitle: '03 — Save Metadata',
-      panelInvTitle: '04 — Material Inventory (8 tiers \u00D7 38 materials)',
-      invNoteVerified: '<b>Structurally confirmed</b> (cross-checked on multiple independent real saves, plus a real in-game fuse transaction diff): starting at byte offset <b>805</b>, a table of <b>304 records</b> (8 rarity tiers \u00D7 38 materials \u2014 Relic is index 0, then Scrap\u2013Magmatic), 5 bytes each \u2014 1 flag byte + a 4-byte little-endian count. Tier names come directly from the game\u2019s compiled metadata (the <code>et</code> enum). Row ordering is now well-supported: a real fuse (Geared motor \u2192 Magmatic motor) landed exactly on row 17 in both tiers, and 9 distinct Relic-tier core filter values matched known real ownership exactly (including a live 3\u21922 diff for cyan).',
-      invNoteUnverified: '<b>Still not 100% verified:</b> not every one of the 38 row names has been individually confirmed \u2014 the list is carried over from the dr-0- string table, and while the overall ordering now has strong supporting evidence (see above), a handful of specific names could still be off. Toggle "slot index only" if you\u2019d rather not see a name that might be wrong.',
-      showFlagsLabel: 'Show flag bits (advanced)',
+      panelInvTitle: '04 — Material Inventory ({tiers} tiers \u00D7 {mats} materials)',
+      invNoteVerified: '<b>Structurally confirmed</b> (cross-checked across multiple independent real saves and versions, plus real in-game fuse-transaction diffs): starting at byte offset <b>{base}</b>, a table of <b>{total} records</b> ({tiers} rarity tiers \u00D7 {mats} materials \u2014 Relic is index 0, then Scrap\u2013Magmatic, plus any tiers added in later updates), 5 bytes each \u2014 1 flag byte + a 4-byte little-endian count. Row ordering is well-supported: a real fuse (Geared motor \u2192 Magmatic motor) landed exactly on row 17 in both tiers, and Relic-tier core filter values have repeatedly matched known real ownership exactly (including live diffs, e.g. cyan 3\u21922).',
+      invNoteUnverified: '<b>Still not 100% verified:</b> not every one of the {mats} row names has been individually confirmed \u2014 the list is carried over from the dr-0- string table. Any tier name beyond the original 7 (confirmed via the game\u2019s <code>et</code> enum) is a placeholder, since it comes from a game update with no matching metadata dump yet.',
+      showNewLabel: 'Show/edit "NEW" badge status',
+      hideEmptyLabel: 'Hide rows that are 0 in every tier',
+      markAllNewBtn: 'Mark everything as NEW',
+      markNoneNewBtn: 'Mark everything as NOT new',
+      flagMeaningNote: 'Best current guess, not fully proven: bit0 of the flag byte seems to track whether an item has been "seen" \u2014 checking the box here clears that bit, which should make it show the "NEW" badge in-game.',
+      obtainedMeaningNote: 'Best current guess, not fully proven: bit1 seems to track whether this item has ever been obtained. The game likely doesn\u2019t check this seriously (no real anti-cheat), but items given directly by editing this table sometimes need to be equipped/fused and returned before the game notices and shows "NEW" \u2014 editing this bit directly may help skip that.',
       showRawLabel: 'Show slot index only (hide guessed names)',
       noFieldsForType: 'This file is shorter than the inventory table region \u2014 the grid can\u2019t be shown for this file.',
+      gridStructWarning: 'This save doesn\u2019t match the expected table layout (invalid flag byte found) \u2014 likely a game-version offset drift. The grid is hidden rather than showing wrong data; the hex view below still works.',
       panel4Title: '05 — Hex View',
       hexApplyBtn: 'Apply Hex Changes',
       hexHint: 'Left column is the offset, middle is the hex bytes, right is the matching text. Only the middle hex section is read back in. Editing here updates the fields above too, and vice versa. Byte count must stay the same (no inserting or deleting bytes).',
@@ -256,6 +276,9 @@
       checksumAuto: 'Recomputed on export',
       metaTsLabel: 'Last saved',
       metaTsHint: 'confirmed — unix ms',
+      metaShardLabel: 'Shards',
+      metaShardHint: 'unverified single candidate — see note below',
+      metaShardNote: '<b>Not verified — single positional match, not a proven field.</b> Searched the whole decrypted save for the exact int32 value the player reported (1402) and got exactly one hit, at byte offset <b>8524</b> (4-byte little-endian). No before/after diff exists yet, so this could be a coincidental match rather than the real Shard field. Context is mixed: it sits right before what looks like a length-prefixed string table (<code>code</code>, <code>changelog</code>, promo-code-like entries around offset 8536+), which is plausible if this is jl field 57 (ShardCount) sitting just ahead of jl field 62 (ClaimedPromoCodes) — but that ordering guess is untested. Treat this field as a guess: back up your save, edit it, and confirm the in-game shard total changes to match before trusting it. If it\u2019s wrong, the most reliable fix is a real diff \u2014 note your current shard count, spend or earn some, save again, and compare the two decrypted files byte-for-byte.',
     },
     zh: {
       title: '存檔編輯器',
@@ -274,6 +297,13 @@
       showFlagsLabel: '顯示旗標位元（進階）',
       showRawLabel: '只顯示格子編號（隱藏推測名稱）',
       noFieldsForType: '這份檔案長度不夠到inventory表格範圍，無法顯示這張表格。',
+      gridStructWarning: '這份存檔跟預期的表格結構對不上（出現不合法的旗標byte），大概率是遊戲版本更新導致位移改變。表格先隱藏，不顯示錯誤資料——下面的hex view仍然可以用。',
+      showNewLabel: '顯示/編輯「NEW」標記狀態',
+      hideEmptyLabel: '隱藏全品階都是0的列',
+      markAllNewBtn: '全部標記為NEW',
+      markNoneNewBtn: '全部標記為非NEW',
+      flagMeaningNote: '目前最佳猜測，還沒完全證實：旗標byte的bit0似乎是在追蹤這個物品是否「已讀」——勾選這裡會清掉那個bit，理論上遊戲內就會顯示NEW標記。',
+      obtainedMeaningNote: '目前最佳猜測，還沒完全證實：bit1似乎是在追蹤這個物品「有沒有被獲取過」。遊戲大概不會認真檢查這個（沒有真的反作弊），但透過改這張表直接拿到的物品，有時候得先裝備/丟進fuse槽再拿回來，遊戲才會注意到並顯示NEW——直接改這個bit或許能跳過那個步驟。',
       panel4Title: '05 — 十六進位檢視',
       hexApplyBtn: '套用十六進位變更',
       hexHint: '左邊是位移量，中間是十六進位位元組，右邊是對應的文字。只有中間的十六進位部分會被讀取。在這裡改動也會同步更新上面的欄位，反之亦然。位元組數量必須跟原本一致（不能新增或刪除位元組）。',
@@ -292,6 +322,9 @@
       checksumAuto: '匯出時自動重算',
       metaTsLabel: '上次存檔時間',
       metaTsHint: '已確認 — unix ms',
+      metaShardLabel: 'Shard（貨幣）',
+      metaShardHint: '未驗證的單一候選值——見下方說明',
+      metaShardNote: '<b>尚未驗證——只是單一位置命中，不是已證實的欄位。</b>在整份解密後的明文裡搜尋玩家回報的確切數值 1402（int32），全檔只找到一處命中，在 byte offset <b>8524</b>（4-byte little-endian）。目前沒有任何前後diff可以佐證，所以有可能只是巧合命中，不是真正的Shard欄位。上下文證據好壞參半：這個位置緊接在一段看起來像「長度前綴字串表」的資料前面（offset 8536起有 <code>code</code>、<code>changelog</code> 等疑似promo code相關字串），如果這真的是 jl enum 第57個欄位（ShardCount）、剛好在第62個欄位（ClaimedPromoCodes）前面，順序上說得通——但這個順序推測本身也還沒驗證過。請把這個欄位當猜測看待：先備份存檔，改動後進遊戲確認實際shard總量真的變成你改的數字，才能信任它。如果錯了，最可靠的修正方式是做一次真實diff——記下目前的shard數，花掉或賺一些，再存一次檔，逐byte比對兩份解密後的檔案。',
     }
   };
 
@@ -363,29 +396,52 @@
   // by cross-diffing 2 independent real save-0- files of different sizes (995..2325
   // stayed identical both times, flag byte valid 0/1 across all 266 records, boundary
   // broke exactly at record 266 = 7*38 both times).
-  const INV_BASE = 805;
+  const INV_BASE = 868;
   const RECORD_SIZE = 5; // 1 byte flags + 4 byte u32 count
-  // Tier names: verified — pulled directly from the game's compiled et__Enum (il2cpp.h).
-  // Relic=-1 sits first in the array (index 0), Scrap..Magmatic follow (index 1-7) —
-  // confirmed by diffing a real fuse transaction that changed Relic-tier cyan core
-  // filter count 3->2, landing exactly at offset 940 (record 27 in this 8x38 table).
-  const TIERS = ['Relic','Scrap','Tarnished','Pure','Toxic','Frozen','Geared','Magmatic'];
-  // Material name list: order confirmed via real gameplay diffs — motor (idx17) verified
-  // by a fuse transaction (Geared 20->19, Magmatic 3->4), and 9 Relic-tier core filter
-  // values (idx25-37) matched exactly against known real ownership (blue=0, red=0,
-  // cyan=3, black/green/mint/orange/pink/purple/yellow=1). Not every one of the 38
-  // names has been individually confirmed, but the ordering itself is now well-supported.
+  // Tier names: first 8 verified from et__Enum (il2cpp.h, pre-update build). The 9th
+  // ("Tier8") is a new rarity added in a later game update — structurally confirmed
+  // (base offset relocated from 805->868, material list unchanged, table now spans
+  // 9x38=342 records ending at offset 2578) but its real display name is unknown; a
+  // fresh il2cpp.h from the updated APK would confirm it.
+  // Tier names: first 8 verified from et__Enum (il2cpp.h, pre-update build). The 9th,
+  // "Gilded", was added in a later game update — structurally confirmed to exist as
+  // an extra tier at the end of the array (base offset relocated, table grew by one
+  // tier's worth of records) but not yet re-verified byte-for-byte against a save
+  // that has real Gilded-tier holdings, since the update also added 2 new materials
+  // (Detacher, Siphon) which may shift the per-tier stride from 38 to 40 — treat
+  // offsets for saves from this version as provisional until diffed against a real
+  // save.
+  const TIERS = ['Relic','Scrap','Tarnished','Pure','Toxic','Frozen','Geared','Magmatic','Gilded'];
+  // Material name list: order for the first 38 (pre-update) entries confirmed via real
+  // gameplay diffs — motor verified by a fuse transaction (Geared 20->19, Magmatic
+  // 3->4), and Relic-tier core filter values matched known real ownership exactly
+  // (blue=0, red=0, cyan=3, black/green/mint/orange/pink/purple/yellow=1). The 2 new
+  // materials from the Gilded update, 'siphon' and 'detacher', are NOT appended at
+  // the end — confirmed via a real dr-0- string-table hex dump to be INSERTED mid-list
+  // (siphon between ranger/surge_crystal, detacher between turret/drone), shifting
+  // every material after 'ranger' by +1 or +2 versus the pre-update ordering.
   const MATERIAL_NAMES = ['crawler','dasher','driver','tank','amp','ember','mortar','node','nova','ranger',
-    'surge_crystal','turret','drone','hookshot','hull_shred','leech_core','magnifier','motor','nexus',
-    'overdrive_cell','propeller','radar','shield_unit','spike','spring','core_filter_black','core_filter_blue',
-    'core_filter_cyan','core_filter_green','core_filter_mint','core_filter_orange','core_filter_pink',
-    'core_filter_purple','core_filter_red','core_filter_white','core_filter_yellow','core_fragment','core_inverter'];
-  const N_MATERIALS = MATERIAL_NAMES.length; // 38
+    'siphon','surge_crystal','turret','detacher','drone','hookshot','hull_shred','leech_core','magnifier',
+    'motor','nexus','overdrive_cell','propeller','radar','shield_unit','spike','spring','core_filter_black',
+    'core_filter_blue','core_filter_cyan','core_filter_green','core_filter_mint','core_filter_orange',
+    'core_filter_pink','core_filter_purple','core_filter_red','core_filter_white','core_filter_yellow',
+    'core_fragment','core_inverter'];
+  const N_MATERIALS = MATERIAL_NAMES.length; // 40
 
   function invOffset(tierIdx, matIdx){ return INV_BASE + (tierIdx * N_MATERIALS + matIdx) * RECORD_SIZE; }
 
+  // Timestamp offset: was 782 in the pre-Gilded-update save format. Re-verified against
+  // a save file uploaded 2026-08 (name embeds the same unix-ms value the game wrote) and
+  // found the field had moved to 845 — the game added ~63 bytes somewhere ahead of it in
+  // a later update, independent of the earlier 805->868 inventory-table shift. Confirmed
+  // by exact match, same cross-check method as the original 782 finding.
   const META_FIELDS = [
-    { key:'ts', labelKey:'metaTsLabel', hintKey:'metaTsHint', offset:782, size:8, type:'i64' }
+    { key:'ts', labelKey:'metaTsLabel', hintKey:'metaTsHint', offset:845, size:8, type:'i64' },
+    // Shard (currency) count: NOT structurally verified. Found by scanning the entire
+    // decrypted save for the exact int32 the player reported holding (1402) and getting
+    // exactly one hit. See metaShardNote below for caveats — needs a before/after diff
+    // to actually confirm.
+    { key:'shard', labelKey:'metaShardLabel', hintKey:'metaShardHint', offset:8524, size:4, type:'i32', unverified:true }
   ];
 
   const TYPE_RANGE = { u8:{min:0,max:255}, u32:{min:0,max:4294967295}, i32:{min:0,max:2147483647}, i64:{min:0n,max:9223372036854775807n} };
@@ -462,7 +518,7 @@
       const val = readTyped(plaintext, f.offset, f.type);
       const displayVal = f.type === 'i64' ? val.toString() : val;
       const row = document.createElement('div');
-      row.className = 'frow';
+      row.className = 'frow' + (f.unverified ? ' unverified' : '');
       row.innerHTML = `
         <div class="frow-label">${t(f.labelKey)}<small>${t(f.hintKey)}</small></div>
         <input class="num-input" type="text" inputmode="numeric" value="${displayVal}">
@@ -483,15 +539,37 @@
   }
 
   function invGridFits(){ return invOffset(TIERS.length - 1, N_MATERIALS - 1) + RECORD_SIZE <= plaintext.length; }
+  function invGridLooksValid(){
+    // Every flag byte in the table should be 0-3 (2 packed bools). If this fails,
+    // the offset/stride constants are wrong for this save's version — almost
+    // certainly a game-version drift like the one that moved the base from 805 to
+    // 868 and added the Gilded tier + 2 materials.
+    for (let t = 0; t < TIERS.length; t++){
+      for (let m = 0; m < N_MATERIALS; m++){
+        const off = invOffset(t, m);
+        if (off >= plaintext.length) return false;
+        const flag = plaintext[off];
+        if (flag < 0 || flag > 3) return false;
+      }
+    }
+    return true;
+  }
 
   function renderInvGrid(){
     const table = $('invGrid');
     table.innerHTML = '';
     $('noGridMsg').classList.toggle('hidden', invGridFits());
     if (!invGridFits()) return;
+    if (!invGridLooksValid()){
+      $('noGridMsg').textContent = t('gridStructWarning');
+      $('noGridMsg').classList.remove('hidden');
+      return;
+    }
 
-    const showFlags = $('showFlags').checked;
-    const showRaw = $('showRawNames').checked;
+    const showNew = $('showNew').checked;
+    const hideEmpty = $('hideEmptyRows').checked;
+    $('markAllNewBtn').classList.toggle('hidden', !showNew);
+    $('markNoneNewBtn').classList.toggle('hidden', !showNew);
 
     const thead = document.createElement('thead');
     const htr = document.createElement('tr');
@@ -509,21 +587,24 @@
 
     const tbody = document.createElement('tbody');
     for (let m = 0; m < N_MATERIALS; m++){
+      if (hideEmpty){
+        let allZero = true;
+        for (let tIdx = 0; tIdx < TIERS.length; tIdx++){
+          if (readTyped(plaintext, invOffset(tIdx, m) + 1, 'u32') !== 0){ allZero = false; break; }
+        }
+        if (allZero) continue;
+      }
       const tr = document.createElement('tr');
       const rowTh = document.createElement('th');
-      if (showRaw){
-        rowTh.innerHTML = `<span class="idx">#${m}</span>`;
-      } else {
-        rowTh.innerHTML = `<span class="idx">#${m}</span><span class="guessname">${MATERIAL_NAMES[m]}</span>`;
-      }
+      rowTh.innerHTML = `<span class="idx">#${m}</span><span class="guessname">${MATERIAL_NAMES[m]}</span>`;
       tr.appendChild(rowTh);
 
       for (let tIdx = 0; tIdx < TIERS.length; tIdx++){
         const off = invOffset(tIdx, m);
         const flagVal = plaintext[off];
         const countVal = readTyped(plaintext, off + 1, 'u32');
-        const bit0 = (flagVal & 1) !== 0;
-        const bit1 = (flagVal & 2) !== 0;
+        const isNew = (flagVal & 1) === 0; // working hypothesis: bit0 clear = shows "NEW" badge
+        const isObtained = (flagVal & 2) !== 0; // working hypothesis: bit1 = "ever obtained"
 
         const td = document.createElement('td');
         const cell = document.createElement('div');
@@ -544,21 +625,21 @@
         });
         cell.appendChild(countInput);
 
-        if (showFlags){
+        if (showNew){
           const flagRow = document.createElement('div');
           flagRow.className = 'flagrow';
-          flagRow.innerHTML = `
-            <label title="bit0 (hxo) — meaning not fully confirmed"><input type="checkbox" data-bit="0" ${bit0?'checked':''}>b0</label>
-            <label title="bit1 (hxp) — meaning not fully confirmed"><input type="checkbox" data-bit="1" ${bit1?'checked':''}>b1</label>
-          `;
-          flagRow.querySelectorAll('input[type=checkbox]').forEach(cb => {
-            cb.addEventListener('change', () => {
-              const bit = parseInt(cb.getAttribute('data-bit'), 10);
-              let v = plaintext[off];
-              if (cb.checked) v |= (1 << bit); else v &= ~(1 << bit);
-              plaintext[off] = v & 0xFF;
-              renderHex();
-            });
+          flagRow.innerHTML = `<label title="${t('flagMeaningNote')}"><input type="checkbox" class="new-cb" ${isNew?'checked':''}>NEW</label><label title="${t('obtainedMeaningNote')}"><input type="checkbox" class="obt-cb" ${isObtained?'checked':''}>OBT</label>`;
+          flagRow.querySelector('.new-cb').addEventListener('change', (e) => {
+            let v = plaintext[off];
+            if (e.target.checked) v &= ~1; else v |= 1; // checked = NEW = bit0 cleared
+            plaintext[off] = v & 0xFF;
+            renderHex();
+          });
+          flagRow.querySelector('.obt-cb').addEventListener('change', (e) => {
+            let v = plaintext[off];
+            if (e.target.checked) v |= 2; else v &= ~2; // checked = obtained = bit1 set
+            plaintext[off] = v & 0xFF;
+            renderHex();
           });
           cell.appendChild(flagRow);
         }
@@ -647,8 +728,28 @@
   $('resetBtn').addEventListener('click', resetToOriginal);
   $('langEn').addEventListener('click', () => setLang('en'));
   $('langZh').addEventListener('click', () => setLang('zh'));
-  $('showFlags').addEventListener('change', renderInvGrid);
-  $('showRawNames').addEventListener('change', renderInvGrid);
+  $('showNew').addEventListener('change', renderInvGrid);
+  $('hideEmptyRows').addEventListener('change', renderInvGrid);
+  $('markAllNewBtn').addEventListener('click', () => {
+    for (let t = 0; t < TIERS.length; t++){
+      for (let m = 0; m < N_MATERIALS; m++){
+        const off = invOffset(t, m);
+        plaintext[off] &= ~1; // clear bit0 on every record -> everything shows NEW
+      }
+    }
+    renderInvGrid();
+    renderHex();
+  });
+  $('markNoneNewBtn').addEventListener('click', () => {
+    for (let t = 0; t < TIERS.length; t++){
+      for (let m = 0; m < N_MATERIALS; m++){
+        const off = invOffset(t, m);
+        plaintext[off] |= 1; // set bit0 on every record -> nothing shows NEW
+      }
+    }
+    renderInvGrid();
+    renderHex();
+  });
 
   applyStaticI18n();
 })();
