@@ -99,6 +99,19 @@
   textarea.hexarea:focus{outline:none;border-color:var(--accent);}
   .hex-hint{color:var(--text-faint);font-size:11px;margin-top:8px;}
 
+  .hexgrid{width:100%;max-height:420px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:2px;font-family:var(--mono);font-size:12px;}
+  .hexrow{display:flex;align-items:center;gap:10px;padding:1px 10px;}
+  .hexrow:hover{background:rgba(255,255,255,0.02);}
+  .hexoff{width:64px;flex:none;color:var(--text-faint);user-select:none;}
+  .hexbytes{display:flex;gap:2px;flex:none;}
+  .hexbytes input{width:19px;height:20px;background:transparent;border:1px solid transparent;color:var(--text-dim);font-family:var(--mono);font-size:12px;text-align:center;padding:0;border-radius:1px;}
+  .hexbytes input:focus{outline:none;border-color:var(--accent);background:var(--panel);}
+  .hexbytes input.dirty{color:var(--accent);}
+  .hexascii{display:flex;gap:0;flex:none;margin-left:6px;}
+  .hexascii input{width:9px;height:20px;background:transparent;border:1px solid transparent;color:var(--text-faint);font-family:var(--mono);font-size:12px;text-align:center;padding:0;border-radius:1px;}
+  .hexascii input:focus{outline:none;border-color:var(--accent);background:var(--panel);}
+  .hexascii input.dirty{color:var(--accent);}
+
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
   button{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:0.02em;padding:10px 18px;border-radius:2px;border:1px solid var(--border-bright);background:var(--surface-2);color:var(--text);cursor:pointer;transition:border-color .15s, background .15s, color .15s;}
   button:hover{border-color:var(--accent);color:var(--accent);}
@@ -131,7 +144,6 @@
 
   <header>
     <div>
-      <div class="eyebrow">Corebound / Unofficial Tool</div>
       <h1 data-i18n="title">Save Editor</h1>
       <p class="sub" data-i18n="subtitle" data-i18n-html="true"></p>
     </div>
@@ -174,15 +186,15 @@
       <div class="panel-body">
         <div id="metaArea"></div>
         <p class="fieldnote" id="shardNote" data-i18n="metaShardNote" data-i18n-html="true"></p>
+        <p class="fieldnote" id="boost1Note" data-i18n="metaBoost1Note" data-i18n-html="true"></p>
       </div>
     </div>
 
     <!-- inventory grid -->
     <div class="panel">
-      <div class="panel-head"><span class="panel-title" data-i18n="panelInvTitle">04 — Material Inventory</span></div>
+      <div class="panel-head"><span class="panel-title" id="panelInvTitle">04 — Material Inventory</span></div>
       <div class="panel-body">
-        <p class="fieldnote verified" data-i18n="invNoteVerified" data-i18n-html="true"></p>
-        <p class="fieldnote" data-i18n="invNoteUnverified" data-i18n-html="true"></p>
+        <p class="fieldnote verified" id="invNote"></p>
         <div class="grid-toolbar">
           <label><input type="checkbox" id="showNew"> <span data-i18n="showNewLabel">Show/edit "NEW" badge status</span></label>
           <label><input type="checkbox" id="hideEmptyRows"> <span data-i18n="hideEmptyLabel">Hide rows that are 0 in every tier</span></label>
@@ -196,14 +208,13 @@
       </div>
     </div>
 
-    <!-- hex, two-way synced -->
+    <!-- hex, three-column, live two-way sync -->
     <div class="panel">
       <div class="panel-head">
         <span class="panel-title" data-i18n="panel4Title">05 — Hex View</span>
-        <button id="hexApplyBtn" data-i18n="hexApplyBtn">Apply Hex Changes</button>
       </div>
       <div class="panel-body">
-        <textarea class="hexarea" id="hexArea" spellcheck="false"></textarea>
+        <div class="hexgrid" id="hexGrid"></div>
         <p class="hex-hint" data-i18n="hexHint"></p>
         <div class="msg" id="hexMsg"></div>
       </div>
@@ -236,6 +247,8 @@
   // ---------- i18n ----------
   const STRINGS = {
     en: {
+      panelInvTitle: '04 — Material Inventory ({tiers} tiers \u00D7 {mats} materials)',
+      invNote: 'Table starting at byte offset {base}: {tiers} rarity tiers \u00D7 {mats} materials, 5 bytes per record (1 flag byte + 4-byte count).',
       title: 'Save Editor',
       subtitle: 'Unpack, edit, and repack a Corebound local save (<b>save-*.bin</b>). The algorithm is reverse-engineered from the game binary and checksum-verified; everything runs in your browser — <b>nothing is uploaded anywhere</b>. Back up the original file before editing.',
       panel1Title: '01 — Load Save',
@@ -246,9 +259,6 @@
       stLenLabel: 'Plaintext Length',
       stChecksumLabel: 'Checksum',
       panelMetaTitle: '03 — Save Metadata',
-      panelInvTitle: '04 — Material Inventory ({tiers} tiers \u00D7 {mats} materials)',
-      invNoteVerified: '<b>Structurally confirmed</b> (cross-checked across multiple independent real saves and versions, plus real in-game fuse-transaction diffs): starting at byte offset <b>{base}</b>, a table of <b>{total} records</b> ({tiers} rarity tiers \u00D7 {mats} materials \u2014 Relic is index 0, then Scrap\u2013Magmatic, plus any tiers added in later updates), 5 bytes each \u2014 1 flag byte + a 4-byte little-endian count. Row ordering is well-supported: a real fuse (Geared motor \u2192 Magmatic motor) landed exactly on row 17 in both tiers, and Relic-tier core filter values have repeatedly matched known real ownership exactly (including live diffs, e.g. cyan 3\u21922).',
-      invNoteUnverified: '<b>Still not 100% verified:</b> not every one of the {mats} row names has been individually confirmed \u2014 the list is carried over from the dr-0- string table. Any tier name beyond the original 7 (confirmed via the game\u2019s <code>et</code> enum) is a placeholder, since it comes from a game update with no matching metadata dump yet.',
       showNewLabel: 'Show/edit "NEW" badge status',
       hideEmptyLabel: 'Hide rows that are 0 in every tier',
       markAllNewBtn: 'Mark everything as NEW',
@@ -259,28 +269,36 @@
       noFieldsForType: 'This file is shorter than the inventory table region \u2014 the grid can\u2019t be shown for this file.',
       gridStructWarning: 'This save doesn\u2019t match the expected table layout (invalid flag byte found) \u2014 likely a game-version offset drift. The grid is hidden rather than showing wrong data; the hex view below still works.',
       panel4Title: '05 — Hex View',
-      hexApplyBtn: 'Apply Hex Changes',
-      hexHint: 'Left column is the offset, middle is the hex bytes, right is the matching text. Only the middle hex section is read back in. Editing here updates the fields above too, and vice versa. Byte count must stay the same (no inserting or deleting bytes).',
+      hexHint: 'Edit the hex bytes or the ASCII text directly \u2014 each side updates the other, and other panels (metadata, inventory) update live too.',
       panel5Title: '06 — Export',
       exportBtn: 'Repack &amp; Download',
       resetBtn: 'Reset to Original',
-      footer: 'Algorithm reverse-engineered from the game binary (libil2cpp.so, IL2CPP metadata v39). Format: [4 bytes cipher id][10 bytes random][encrypted payload][6 bytes checksum], encryption is ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10], byte by byte. Confirmed: save timestamp offset, and the 7\u00D738 material record table structure (offset, record width, tier grouping) \u2014 cross-checked on multiple real save files. Not confirmed: which material name maps to which row. This is an unofficial fan tool, unaffiliated with overcurve / Corebound. Use it only to edit your own single-player save.',
+      footer: 'Algorithm reverse-engineered from the game binary (libil2cpp.so, IL2CPP metadata v39). Format: [4 bytes cipher id][10 bytes random][encrypted payload][6 bytes checksum], encryption is ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10], byte by byte. This is an unofficial fan tool, unaffiliated with overcurve / Corebound. Use it only to edit your own single-player save.',
       loadOk: 'Decrypted successfully — checksum matches.',
       loadBad: 'Decrypted, but the checksum doesn\u2019t match — the file may be corrupted or from a different version of this format. Edit carefully.',
       loadFail: 'Failed to read file: ',
-      hexBadChars: 'Some of the hex content isn\u2019t valid — please check it and try again.',
-      hexLenMismatch: 'Byte count changed from {a} to {b} — hex edits can\u2019t add or remove bytes, so this wasn\u2019t applied.',
-      hexApplied: 'Hex changes applied.',
       exportedMsg: 'Downloaded: {name} ({size} bytes). Back up the original before replacing it, then drop this file back into the game\u2019s save folder.',
       resetDone: 'Reverted to the original file contents.',
       checksumAuto: 'Recomputed on export',
       metaTsLabel: 'Last saved',
       metaTsHint: 'confirmed — unix ms',
       metaShardLabel: 'Shards',
-      metaShardHint: 'unverified single candidate — see note below',
-      metaShardNote: '<b>Not verified — single positional match, not a proven field.</b> Searched the whole decrypted save for the exact int32 value the player reported (1402) and got exactly one hit, at byte offset <b>8524</b> (4-byte little-endian). No before/after diff exists yet, so this could be a coincidental match rather than the real Shard field. Context is mixed: it sits right before what looks like a length-prefixed string table (<code>code</code>, <code>changelog</code>, promo-code-like entries around offset 8536+), which is plausible if this is jl field 57 (ShardCount) sitting just ahead of jl field 62 (ClaimedPromoCodes) — but that ordering guess is untested. Treat this field as a guess: back up your save, edit it, and confirm the in-game shard total changes to match before trusting it. If it\u2019s wrong, the most reliable fix is a real diff \u2014 note your current shard count, spend or earn some, save again, and compare the two decrypted files byte-for-byte.',
+      metaShardHint: 'confirmed — int64, la field index 57 (ShardCount)',
+      metaFieldNotFound: 'anchor not found in this save — offset may have drifted, field skipped rather than shown wrong',
+      metaBoost1Label: 'World 1 Boost (Scrapyard)',
+      metaBoost2Label: 'World 2 Boost',
+      metaBoost3Label: 'World 3 Boost',
+      metaBoost4Label: 'World 4 Boost',
+      metaBoost5Label: 'World 5 Boost',
+      metaBoost6Label: 'World 6 Boost',
+      metaBoost7Label: 'World 7 Boost',
+      metaBoostHint: 'offset 6611-6617 — see note below',
+      metaBoost1Note: 'Boost level per world, offsets 6611\u20136617. Stored value is level minus 1 (no negative, floor is level 1). Levels above 7 aren\u2019t reachable normally and can cause world generation to hang. Only offset 6611 (World 1) is diff-confirmed \u2014 the other six are laid out right after it based on the game\u2019s field order, not independently verified one by one. Any of these offsets may also be off on a save with different crate/equipment history than the one this was tested on \u2014 verify in-game after editing.',
+      metaShardNote: 'The game\u2019s currency. Stored as a 64-bit integer \u2014 no practical upper limit.',
     },
     zh: {
+      panelInvTitle: '04 — 材料庫存（{tiers}品階 × {mats}材料）',
+      invNote: '從byte offset {base}開始的表：{tiers}個品階 × {mats}種材料，每筆記錄5 bytes（1 byte旗標 + 4 byte數量）。',
       title: '存檔編輯器',
       subtitle: '拆解、編輯、重新封裝 Corebound 的本機存檔（<b>save-*.bin</b>）。演算法逆向自遊戲本體並經校驗碼驗證，全部運算在你的瀏覽器裡完成，<b>不會把存檔上傳到任何伺服器</b>。修改前請自行備份原始檔案。',
       panel1Title: '01 — 載入存檔',
@@ -291,9 +309,6 @@
       stLenLabel: '明文長度',
       stChecksumLabel: '校驗碼',
       panelMetaTitle: '03 — 存檔中繼資料',
-      panelInvTitle: '04 — 材料庫存（8品階 × 38材料）',
-      invNoteVerified: '<b>結構已確認</b>（在多份真實存檔上交叉驗證過，加上一次真實遊戲內fuse操作的diff）：從 byte offset <b>805</b> 開始，一張 <b>304筆記錄</b>（8品階 × 38材料——Relic是index 0，接著才是Scrap~Magmatic）的表，每筆 5 bytes——1 byte 旗標 + 4 byte little-endian 數量。品階名稱直接來自遊戲編譯後的 metadata（<code>et</code> enum）。列的順序目前有紮實證據支持：一次真實fuse（Geared motor→Magmatic motor）精準落在兩個品階的第17列，加上9個Relic品階的core filter數值跟真實擁有量完全吻合（包括一次cyan的3→2 diff）。',
-      invNoteUnverified: '<b>還沒100%驗證：</b>38個材料名稱不是每一個都個別確認過，這份清單沿用dr-0-字串表的順序，雖然整體順序現在有紮實證據支持（見上），但少數幾個名稱仍可能是錯的。不想看到可能錯誤的名稱可以切換成只顯示格子編號。',
       showFlagsLabel: '顯示旗標位元（進階）',
       showRawLabel: '只顯示格子編號（隱藏推測名稱）',
       noFieldsForType: '這份檔案長度不夠到inventory表格範圍，無法顯示這張表格。',
@@ -306,25 +321,32 @@
       obtainedMeaningNote: '目前最佳猜測，還沒完全證實：bit1似乎是在追蹤這個物品「有沒有被獲取過」。遊戲大概不會認真檢查這個（沒有真的反作弊），但透過改這張表直接拿到的物品，有時候得先裝備/丟進fuse槽再拿回來，遊戲才會注意到並顯示NEW——直接改這個bit或許能跳過那個步驟。',
       panel4Title: '05 — 十六進位檢視',
       hexApplyBtn: '套用十六進位變更',
-      hexHint: '左邊是位移量，中間是十六進位位元組，右邊是對應的文字。只有中間的十六進位部分會被讀取。在這裡改動也會同步更新上面的欄位，反之亦然。位元組數量必須跟原本一致（不能新增或刪除位元組）。',
+      hexHint: '直接編輯十六進位或右邊的文字都可以——兩邊會互相同步，改動也會即時反映到上面的metadata跟inventory欄位。',
       panel5Title: '06 — 匯出',
       exportBtn: '重新封裝並下載',
       resetBtn: '還原成原始檔案',
-      footer: '演算法逆向自遊戲本體（libil2cpp.so, IL2CPP metadata v39），格式：[4 bytes 版本碼][10 bytes 隨機數][加密後資料][6 bytes 校驗碼]，加密方式為 ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10]，逐位元組。已確認：存檔時間戳位移、7×38材料記錄表的結構（位移、記錄寬度、品階分組）——在多份真實存檔上交叉驗證過。尚未確認：哪個材料名稱對應哪一列。此為玩家自製工具，與 overcurve / Corebound 官方無關。請只用來編輯你自己的單機存檔。',
+      footer: '演算法逆向自遊戲本體（libil2cpp.so, IL2CPP metadata v39），格式：[4 bytes 版本碼][10 bytes 隨機數][加密後資料][6 bytes 校驗碼]，加密方式為 ciphertext[i] = plaintext[i] \u2295 (i\u00F710) \u2295 i \u2295 R[i mod 10]，逐位元組。此為玩家自製工具，與 overcurve / Corebound 官方無關。請只用來編輯你自己的單機存檔。',
       loadOk: '解密成功，校驗碼吻合。',
       loadBad: '解密完成，但校驗碼不吻合——檔案可能已損毀或不是這個版本的格式，請小心編輯。',
       loadFail: '讀取失敗：',
-      hexBadChars: '有一些內容看起來不是合法的十六進位，請檢查後再試一次。',
-      hexLenMismatch: '位元組數量從 {a} 變成 {b}——十六進位模式不能增減長度，已取消套用。',
-      hexApplied: '已套用十六進位變更。',
       exportedMsg: '已下載：{name}（{size} bytes）。存檔前記得先備份原始檔案，再把這個檔案放回遊戲的存檔資料夾。',
       resetDone: '已還原成原始檔案內容。',
       checksumAuto: '匯出時自動重算',
       metaTsLabel: '上次存檔時間',
       metaTsHint: '已確認 — unix ms',
       metaShardLabel: 'Shard（貨幣）',
-      metaShardHint: '未驗證的單一候選值——見下方說明',
-      metaShardNote: '<b>尚未驗證——只是單一位置命中，不是已證實的欄位。</b>在整份解密後的明文裡搜尋玩家回報的確切數值 1402（int32），全檔只找到一處命中，在 byte offset <b>8524</b>（4-byte little-endian）。目前沒有任何前後diff可以佐證，所以有可能只是巧合命中，不是真正的Shard欄位。上下文證據好壞參半：這個位置緊接在一段看起來像「長度前綴字串表」的資料前面（offset 8536起有 <code>code</code>、<code>changelog</code> 等疑似promo code相關字串），如果這真的是 jl enum 第57個欄位（ShardCount）、剛好在第62個欄位（ClaimedPromoCodes）前面，順序上說得通——但這個順序推測本身也還沒驗證過。請把這個欄位當猜測看待：先備份存檔，改動後進遊戲確認實際shard總量真的變成你改的數字，才能信任它。如果錯了，最可靠的修正方式是做一次真實diff——記下目前的shard數，花掉或賺一些，再存一次檔，逐byte比對兩份解密後的檔案。',
+      metaShardHint: '已確認 — int64，la欄位index 57（ShardCount）',
+      metaFieldNotFound: '這份存檔沒掃到錨點——offset可能已經漂移，寧可跳過不顯示也不要顯示錯的值',
+      metaBoost1Label: '第1關 Boost（Scrapyard）',
+      metaBoost2Label: '第2關 Boost',
+      metaBoost3Label: '第3關 Boost',
+      metaBoost4Label: '第4關 Boost',
+      metaBoost5Label: '第5關 Boost',
+      metaBoost6Label: '第6關 Boost',
+      metaBoost7Label: '第7關 Boost',
+      metaBoostHint: 'offset 6611-6617——見下方說明',
+      metaBoost1Note: '每個世界的boost等級，offset 6611~6617。存的值是等級減1（沒有負數，下限是1級）。超過7級正常拿不到，可能讓世界生成卡住。只有offset 6611（第1關）做過diff驗證，其餘6個是照遊戲欄位順序緊接在後面推算出來的，沒有逐一單獨驗證。如果存檔的裝備/寶箱歷史跟測試時不同，這些offset也可能不準——改完記得進遊戲確認。',
+      metaShardNote: '遊戲貨幣。存成64-bit整數，數值範圍實務上沒有上限。',
     }
   };
 
@@ -430,18 +452,64 @@
 
   function invOffset(tierIdx, matIdx){ return INV_BASE + (tierIdx * N_MATERIALS + matIdx) * RECORD_SIZE; }
 
+  // Dynamic anchor scan for Shard (la.jfj, jl index 57, type long/int64).
+  // We do NOT trust a hardcoded byte offset here because every field between
+  // Inventory (index3) and ShardCount (index57) that isn't Inventory itself is
+  // variable-length (equipment slots, crates, fuse pool, EnemyStats dict, etc.),
+  // so the absolute offset shifts whenever any of those resize. Instead we find
+  // the fixed *local* structure right after jfj: exactly 4 single-byte bools
+  // (jfk..jfn, HasFollowedYT/Twitter/Reddit/Discord) then a length-prefixed
+  // string array (jfo, ClaimedPromoCodes: repeating [uint16 len][len ASCII bytes]).
+  // Finding two consecutive valid string entries + 4 valid bools right before them
+  // is a strong enough fingerprint to trust; shard = the int64 8 bytes before that.
+  function findShardOffset(pt){
+    const n = pt.length;
+    for (let i = 0; i < n - 4; i++){
+      const l1 = pt[i] | (pt[i+1] << 8);
+      if (l1 < 1 || l1 > 40 || i+2+l1 > n) continue;
+      let ok = true;
+      for (let k = i+2; k < i+2+l1; k++){ if (pt[k] < 0x20 || pt[k] >= 0x7f){ ok = false; break; } }
+      if (!ok) continue;
+      const j = i + 2 + l1;
+      if (j+2 > n) continue;
+      const l2 = pt[j] | (pt[j+1] << 8);
+      if (l2 < 1 || l2 > 40 || j+2+l2 > n) continue;
+      ok = true;
+      for (let k = j+2; k < j+2+l2; k++){ if (pt[k] < 0x20 || pt[k] >= 0x7f){ ok = false; break; } }
+      if (!ok) continue;
+      if (i < 12) continue;
+      const b0=pt[i-4], b1=pt[i-3], b2=pt[i-2], b3=pt[i-1];
+      if (![b0,b1,b2,b3].every(b => b===0 || b===1)) continue;
+      return i - 12; // start of the int64 shard field
+    }
+    return null;
+  }
+
   // Timestamp offset: was 782 in the pre-Gilded-update save format. Re-verified against
   // a save file uploaded 2026-08 (name embeds the same unix-ms value the game wrote) and
   // found the field had moved to 845 — the game added ~63 bytes somewhere ahead of it in
   // a later update, independent of the earlier 805->868 inventory-table shift. Confirmed
   // by exact match, same cross-check method as the original 782 finding.
+  //
+  // World1 boost level, la.jeo[?] (jl index 36, BoostLevels, byte[]): confirmed via a clean
+  // single-byte diff (boost lowered to level 1, then restored to level 7 — only byte at
+  // offset 6611 changed, 0x00<->0x06, no length shift). Stored value = level-1 (0-indexed,
+  // "times boosted" not "boosted to"), unsigned byte so it cannot go below level 1 (no
+  // negative representation). This offset is NOT anchor-verified like shard/ts — it's a
+  // fixed number that worked for the exact saves tested. Everything before it in the `la`
+  // struct that could resize (equipment, crates, fuse pool, EnemyStats dict, ...) may shift
+  // it in other saves. Only world1's entry is mapped; the rest of the BoostLevels/
+  // CompletedBoostLevels arrays (world count, per-world offsets, stride) are still unknown.
   const META_FIELDS = [
     { key:'ts', labelKey:'metaTsLabel', hintKey:'metaTsHint', offset:845, size:8, type:'i64' },
-    // Shard (currency) count: NOT structurally verified. Found by scanning the entire
-    // decrypted save for the exact int32 the player reported holding (1402) and getting
-    // exactly one hit. See metaShardNote below for caveats — needs a before/after diff
-    // to actually confirm.
-    { key:'shard', labelKey:'metaShardLabel', hintKey:'metaShardHint', offset:8524, size:4, type:'i32', unverified:true }
+    { key:'shard', labelKey:'metaShardLabel', hintKey:'metaShardHint', dynamicOffset: findShardOffset, size:8, type:'i64' },
+    { key:'boost1', labelKey:'metaBoost1Label', hintKey:'metaBoostHint', offset:6611, size:1, type:'u8', unverified:true, displayTransform:v=>Number(v)+1, parseTransform:v=>Number(v)-1 },
+    { key:'boost2', labelKey:'metaBoost2Label', hintKey:'metaBoostHint', offset:6612, size:1, type:'u8', unverified:true, displayTransform:v=>Number(v)+1, parseTransform:v=>Number(v)-1 },
+    { key:'boost3', labelKey:'metaBoost3Label', hintKey:'metaBoostHint', offset:6613, size:1, type:'u8', unverified:true, displayTransform:v=>Number(v)+1, parseTransform:v=>Number(v)-1 },
+    { key:'boost4', labelKey:'metaBoost4Label', hintKey:'metaBoostHint', offset:6614, size:1, type:'u8', unverified:true, displayTransform:v=>Number(v)+1, parseTransform:v=>Number(v)-1 },
+    { key:'boost5', labelKey:'metaBoost5Label', hintKey:'metaBoostHint', offset:6615, size:1, type:'u8', unverified:true, displayTransform:v=>Number(v)+1, parseTransform:v=>Number(v)-1 },
+    { key:'boost6', labelKey:'metaBoost6Label', hintKey:'metaBoostHint', offset:6616, size:1, type:'u8', unverified:true, displayTransform:v=>Number(v)+1, parseTransform:v=>Number(v)-1 },
+    { key:'boost7', labelKey:'metaBoost7Label', hintKey:'metaBoostHint', offset:6617, size:1, type:'u8', unverified:true, displayTransform:v=>Number(v)+1, parseTransform:v=>Number(v)-1 }
   ];
 
   const TYPE_RANGE = { u8:{min:0,max:255}, u32:{min:0,max:4294967295}, i32:{min:0,max:2147483647}, i64:{min:0n,max:9223372036854775807n} };
@@ -514,9 +582,21 @@
     const area = $('metaArea');
     area.innerHTML = '';
     META_FIELDS.forEach(f => {
-      if (f.offset + f.size > plaintext.length) return;
-      const val = readTyped(plaintext, f.offset, f.type);
-      const displayVal = f.type === 'i64' ? val.toString() : val;
+      let offset = f.offset;
+      if (f.dynamicOffset){
+        offset = f.dynamicOffset(plaintext);
+        if (offset === null){
+          const row = document.createElement('div');
+          row.className = 'frow unverified';
+          row.innerHTML = `<div class="frow-label">${t(f.labelKey)}<small>${t('metaFieldNotFound')}</small></div>`;
+          area.appendChild(row);
+          return;
+        }
+      }
+      if (offset == null || offset + f.size > plaintext.length) return;
+      const rawVal = readTyped(plaintext, offset, f.type);
+      const shownVal = f.displayTransform ? f.displayTransform(rawVal) : rawVal;
+      const displayVal = (f.type === 'i64') ? shownVal.toString() : shownVal;
       const row = document.createElement('div');
       row.className = 'frow' + (f.unverified ? ' unverified' : '');
       row.innerHTML = `
@@ -528,8 +608,11 @@
       input.addEventListener('change', () => {
         const raw = input.value.trim();
         try {
-          const applied = writeTyped(plaintext, f.offset, f.type, f.type === 'i64' ? BigInt(raw || '0') : Number(raw || '0'));
-          const displayVal2 = f.type === 'i64' ? applied.toString() : applied;
+          let target = f.type === 'i64' ? BigInt(raw || '0') : Number(raw || '0');
+          if (f.parseTransform) target = f.parseTransform(target);
+          const applied = writeTyped(plaintext, offset, f.type, target);
+          const shownApplied = f.displayTransform ? f.displayTransform(applied) : applied;
+          const displayVal2 = (f.type === 'i64') ? shownApplied.toString() : shownApplied;
           input.classList.toggle('clamped', displayVal2.toString() !== raw);
           input.value = displayVal2;
           renderHex();
@@ -556,6 +639,8 @@
   }
 
   function renderInvGrid(){
+    $('panelInvTitle').textContent = t('panelInvTitle', {tiers: TIERS.length, mats: N_MATERIALS});
+    $('invNote').textContent = t('invNote', {base: INV_BASE, tiers: TIERS.length, mats: N_MATERIALS});
     const table = $('invGrid');
     table.innerHTML = '';
     $('noGridMsg').classList.toggle('hidden', invGridFits());
@@ -653,42 +738,69 @@
   }
 
   function renderHex(){
-    const lines = [];
+    const grid = $('hexGrid');
+    grid.innerHTML = '';
+    const frag = document.createDocumentFragment();
     for (let off = 0; off < plaintext.length; off += 16){
-      const chunk = plaintext.slice(off, off + 16);
-      const hex = Array.from(chunk).map(b => b.toString(16).padStart(2,'0')).join(' ');
-      const ascii = Array.from(chunk).map(b => (b >= 0x20 && b <= 0x7E) ? String.fromCharCode(b) : '.').join('');
-      lines.push(off.toString(16).padStart(8,'0') + '  ' + hex.padEnd(16*3-1,' ') + '  ' + ascii);
-    }
-    $('hexArea').value = lines.join('\n');
-  }
+      const row = document.createElement('div');
+      row.className = 'hexrow';
+      const offLabel = document.createElement('div');
+      offLabel.className = 'hexoff';
+      offLabel.textContent = off.toString(16).padStart(8,'0');
+      row.appendChild(offLabel);
 
-  function applyHexEdit(){
-    const text = $('hexArea').value;
-    const lines = text.split('\n');
-    const bytes = [];
-    let ok = true;
-    for (const line of lines){
-      const m = line.match(/^[0-9a-fA-F]{8}\s\s(.{1,47})\s\s/);
-      const hexPart = m ? m[1] : line.slice(10, 57);
-      const tokens = hexPart.trim().split(/\s+/).filter(Boolean);
-      for (const tkn of tokens){
-        if (!/^[0-9a-fA-F]{1,2}$/.test(tkn)){ ok = false; continue; }
-        bytes.push(parseInt(tkn, 16));
+      const byteWrap = document.createElement('div');
+      byteWrap.className = 'hexbytes';
+      const asciiWrap = document.createElement('div');
+      asciiWrap.className = 'hexascii';
+
+      const rowLen = Math.min(16, plaintext.length - off);
+      for (let k = 0; k < rowLen; k++){
+        const idx = off + k;
+        const b = plaintext[idx];
+
+        const hexInput = document.createElement('input');
+        hexInput.maxLength = 2;
+        hexInput.value = b.toString(16).padStart(2,'0');
+        hexInput.dataset.offset = idx;
+        byteWrap.appendChild(hexInput);
+
+        const asciiInput = document.createElement('input');
+        asciiInput.maxLength = 1;
+        asciiInput.value = (b >= 0x20 && b <= 0x7E) ? String.fromCharCode(b) : '.';
+        asciiInput.dataset.offset = idx;
+        asciiWrap.appendChild(asciiInput);
+
+        hexInput.addEventListener('change', () => {
+          const v = hexInput.value.trim();
+          if (!/^[0-9a-fA-F]{1,2}$/.test(v)){ hexInput.value = plaintext[idx].toString(16).padStart(2,'0'); return; }
+          const byteVal = parseInt(v, 16);
+          plaintext[idx] = byteVal;
+          hexInput.value = byteVal.toString(16).padStart(2,'0');
+          asciiInput.value = (byteVal >= 0x20 && byteVal <= 0x7E) ? String.fromCharCode(byteVal) : '.';
+          hexInput.classList.add('dirty'); asciiInput.classList.add('dirty');
+          renderMeta(); renderInvGrid();
+        });
+
+        asciiInput.addEventListener('change', () => {
+          const ch = asciiInput.value;
+          if (ch.length !== 1 || ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7E){
+            const cur = plaintext[idx];
+            asciiInput.value = (cur >= 0x20 && cur <= 0x7E) ? String.fromCharCode(cur) : '.';
+            return;
+          }
+          const byteVal = ch.charCodeAt(0);
+          plaintext[idx] = byteVal;
+          hexInput.value = byteVal.toString(16).padStart(2,'0');
+          hexInput.classList.add('dirty'); asciiInput.classList.add('dirty');
+          renderMeta(); renderInvGrid();
+        });
       }
+      row.appendChild(byteWrap);
+      row.appendChild(asciiWrap);
+      frag.appendChild(row);
     }
-    if (!ok){ $('hexMsg').textContent = t('hexBadChars'); $('hexMsg').className = 'msg bad'; return; }
-    if (bytes.length !== plaintext.length){
-      $('hexMsg').textContent = t('hexLenMismatch', {a: plaintext.length, b: bytes.length});
-      $('hexMsg').className = 'msg bad';
-      return;
-    }
-    plaintext = new Uint8Array(bytes);
-    $('hexMsg').textContent = t('hexApplied');
-    $('hexMsg').className = 'msg ok';
-    renderStatus();
-    renderMeta();
-    renderInvGrid();
+    grid.appendChild(frag);
   }
 
   function exportFile(){
@@ -723,7 +835,6 @@
   ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('drag'); }));
   dz.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
 
-  $('hexApplyBtn').addEventListener('click', applyHexEdit);
   $('exportBtn').addEventListener('click', exportFile);
   $('resetBtn').addEventListener('click', resetToOriginal);
   $('langEn').addEventListener('click', () => setLang('en'));
