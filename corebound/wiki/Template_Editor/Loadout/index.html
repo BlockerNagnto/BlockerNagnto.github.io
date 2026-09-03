@@ -8,28 +8,29 @@
 body{font-family:sans-serif;background:#eee;color:#333;margin:0;padding:20px;display:flex;flex-direction:column;align-items:center}
 h1{margin:0 0 10px 0;font-size:24px;color:#112}
 .intro{max-width:800px;text-align:center;margin-bottom:20px;font-size:14px;color:#555;line-height:1.5}
-.container{display:flex;gap:20px;max-width:1100px;width:100%;align-items:flex-start}
-.preview-panel{flex:1;background:url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="none"/><rect width="10" height="10" fill="rgba(0,0,0,0.05)"/><rect x="10" y="10" width="10" height="10" fill="rgba(0,0,0,0.05)"/></svg>') #fff;border:1px solid #c8ccd1;border-radius:8px;padding:20px;display:flex;flex-direction:column;align-items:center}
-.hull-box{background:rgba(30,30,30,0.6);border-radius:16px;padding:10px;display:inline-block;margin-bottom:20px}
+.container{display:flex;gap:20px;max-width:1100px;width:100%;align-items:stretch}
+.preview-panel{flex:1;background:url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="none"/><rect width="10" height="10" fill="rgba(0,0,0,0.05)"/><rect x="10" y="10" width="10" height="10" fill="rgba(0,0,0,0.05)"/></svg>') #fff;border:1px solid #c8ccd1;border-radius:8px;padding:20px;display:flex;flex-direction:column;align-items:center;overflow-y:auto;box-sizing:border-box;min-width:0}
+.hull-box{background:rgba(30,30,30,0.6);border-radius:16px;padding:10px;display:inline-block;margin-bottom:20px;flex-shrink:0}
 .grid{display:grid;grid-template-columns:repeat(3,70px);grid-template-rows:repeat(3,70px);gap:4px}
 .slot{width:70px;height:70px;background:#000;border:2px solid #333;border-radius:8px;display:flex;justify-content:center;align-items:center;cursor:pointer;position:relative}
 .slot.hidden{visibility:hidden}
 .slot.active{border-color:#fff;box-shadow:0 0 8px #fffa}
 .slot img{max-width:90%;max-height:90%;pointer-events:none}
 .hull-slot{border-color:#888}
-.tech-box{background:rgba(30,30,30,0.6);border-radius:16px;padding:10px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:320px}
-.tech-slot{width:60px;height:60px;background:#000;border:2px solid #333;border-radius:8px;display:flex;justify-content:center;align-items:center;cursor:pointer}
+.tech-box{width:100%;background:rgba(30,30,30,0.6);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
+.tech-row{display:flex;gap:6px;width:100%;box-sizing:border-box}
+.tech-slot{aspect-ratio:1/1;min-width:0;background:#000;border:2px solid #333;border-radius:8px;display:flex;justify-content:center;align-items:center;cursor:pointer;box-sizing:border-box}
 .tech-slot.active{border-color:#fff}
 .tech-slot.static{cursor:default;border-color:#555}
 .tech-slot img{max-width:90%;max-height:90%;pointer-events:none}
-.selection-panel{width:400px;background:#fff;border:1px solid #c8ccd1;border-radius:8px;padding:15px;display:flex;flex-direction:column;gap:15px;height:fit-content;max-height:85vh;overflow-y:auto}
+.selection-panel{width:400px;background:#fff;border:1px solid #c8ccd1;border-radius:8px;padding:15px;display:flex;flex-direction:column;gap:15px;max-height:85vh;box-sizing:border-box;overflow-y:auto}
 .tier-select{width:100%;padding:8px;font-size:14px;border:1px solid #a2a9b1;border-radius:4px}
 .category h3{margin:0 0 8px 0;font-size:16px;border-bottom:1px solid #eaecf0;padding-bottom:4px}
-.item-list{display:flex;flex-wrap:wrap;gap:6px}
-.item-card{display:flex;flex-direction:column;align-items:center;width:60px;background:#f8f9fa;border:1px solid #a2a9b1;border-radius:4px;cursor:pointer;padding:4px;user-select:none}
+.item-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:6px}
+.item-card{display:flex;flex-direction:column;align-items:center;background:#f8f9fa;border:1px solid #a2a9b1;border-radius:4px;cursor:pointer;padding:4px;user-select:none;min-width:0}
 .item-card:hover{background:#eaf3ff;border-color:#3366cc}
-.item-card img{width:40px;height:40px;object-fit:contain}
-.item-card span{font-size:10px;text-align:center;margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;height:24px}
+.item-card img{width:100%;max-width:40px;aspect-ratio:1/1;object-fit:contain}
+.item-card span{font-size:10px;text-align:center;margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .aux-field{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:bold;color:#333}
 .aux-field select{padding:6px;font-size:13px;border:1px solid #a2a9b1;border-radius:4px}
 .aux-field.checkbox-row{flex-direction:row;align-items:center;gap:6px;font-weight:normal}
@@ -37,6 +38,12 @@ h1{margin:0 0 10px 0;font-size:24px;color:#112}
 textarea{width:100%;height:150px;font-family:monospace;padding:10px;border:1px solid #a2a9b1;border-radius:4px;resize:vertical;box-sizing:border-box;background:#f8f9fa}
 button.copy{padding:8px 16px;background:#3366cc;color:white;border:none;border-radius:4px;cursor:pointer;align-self:flex-end;font-weight:bold}
 button.copy:hover{background:#2a4b8d}
+@media (max-width:860px){
+.container{flex-direction:column;align-items:stretch}
+.preview-panel{width:100%;box-sizing:border-box;height:auto;max-height:60vh}
+.selection-panel{width:100%;max-height:60vh}
+}
+
 </style>
 </head>
 <body>
@@ -70,8 +77,9 @@ if(tp==='tech')state.techs[id]=null;
 rdr();
 " style="width: 100%; background: rgb(255, 238, 238); padding: 8px; border: 1px solid rgb(162, 169, 177); border-radius: 4px; cursor: pointer; font-weight: bold; margin-top:10px;">Clear Selected Slot</button>
 <div class="selection-panel">
+<div id="selectionCategories"></div>
 <div class="category" id="auxPanel">
-<h3>Core Systems</h3>
+<h3>Relics</h3>
 <div style="display:flex;flex-direction:column;gap:10px;">
 <div class="aux-field">
 Core Filter
@@ -80,9 +88,9 @@ Core Filter
 <div class="aux-field checkbox-row">
 <input type="checkbox" id="coreInverterChk"> Core Inverter
 </div>
-<div class="aux-field">
+<div class="aux-field" id="invFilterField" style="display:none;">
 Inverter Filter
-<select id="coreInverterFilterSel" disabled><option value="">None (Empty)</option></select>
+<select id="coreInverterFilterSel"><option value="">None (Empty)</option></select>
 </div>
 <div class="aux-field">
 Core Fragment count
@@ -92,9 +100,11 @@ Core Fragment count
 <option value="2">2</option>
 </select>
 </div>
+<div style="border-top:1px solid #eaecf0;margin-top:2px;padding-top:8px;">
+<div class="item-list" id="relicItemsList"></div>
 </div>
 </div>
-<div id="selectionCategories"></div>
+</div>
 </div>
 </div>
 </div>
@@ -110,7 +120,7 @@ Core Fragment count
 const items={
 Hulls:['Crawler','Driver','Dasher','Tank'],
 Weapons:['Amp','Ember','Mortar','Node','Nova','Ranger','Surge Crystal','Turret'],
-Techs:['Drone','Hookshot','Hull Shred','Leech Core','Magnifier','Motor','Overdrive Cell','Propeller','Shield Unit','Spike','Spring','Nexus','Radar']
+Techs:['Drone','Hookshot','Hull Shred','Leech Core','Magnifier','Motor','Overdrive Cell','Propeller','Shield Unit','Spike','Spring']
 };
 const FILTER_COLORS=['Black','Cyan','Green','Mint','Orange','Pink','Purple','White','Yellow'];
 // Radar and Nexus only ever come in Relic quality; they ignore the global tier selector entirely.
@@ -153,17 +163,88 @@ const G=D.getElementById('mainGrid');
 const T=D.getElementById('techBox');
 const O=D.getElementById('output');
 const S=D.getElementById('globalTier');
-const EMPTY_TECH_IMG='https://the-corebound-mobile.fandom.com/wiki/Special:FilePath/Empty_tech_slot.png';
-const EMPTY_WEAPON_IMG='https://the-corebound-mobile.fandom.com/wiki/Special:FilePath/Empty_weapon_slot.png';
+
+// Minimal MD5 (public domain, RFC 1321) - used only to reproduce MediaWiki's
+// hashed upload directory scheme so we can link straight to the CDN file
+// instead of the Special:FilePath redirector (whose final /revision/latest?cb=
+// URL sometimes fails to load when this page is hosted off-wiki).
+function md5(string){
+function rotl(n,c){return (n<<c)|(n>>>(32-c));}
+function toBytes(str){
+const utf8=unescape(encodeURIComponent(str));
+const bytes=[];
+for(let i=0;i<utf8.length;i++) bytes.push(utf8.charCodeAt(i));
+return bytes;
+}
+const s=[7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,
+5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,
+4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,
+6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+const K=[];
+for(let i=0;i<64;i++){K[i]=(Math.floor(Math.abs(Math.sin(i+1))*4294967296))|0;}
+let a0=0x67452301,b0=0xefcdab89,c0=0x98badcfe,d0=0x10325476;
+const bytes=toBytes(string);
+const origLenBits=bytes.length*8;
+bytes.push(0x80);
+while(bytes.length%64!==56) bytes.push(0);
+for(let i=0;i<8;i++){bytes.push((origLenBits/Math.pow(2,8*i))&0xFF);}
+for(let chunkStart=0;chunkStart<bytes.length;chunkStart+=64){
+const M=[];
+for(let j=0;j<16;j++){
+const off=chunkStart+j*4;
+M[j]=(bytes[off])|(bytes[off+1]<<8)|(bytes[off+2]<<16)|(bytes[off+3]<<24);
+}
+let A=a0,B=b0,C=c0,D2=d0;
+for(let i=0;i<64;i++){
+let F,g;
+if(i<16){F=(B&C)|((~B)&D2);g=i;}
+else if(i<32){F=(D2&B)|((~D2)&C);g=(5*i+1)%16;}
+else if(i<48){F=B^C^D2;g=(3*i+5)%16;}
+else{F=C^(B|(~D2));g=(7*i)%16;}
+F=(F+A+K[i]+M[g])|0;
+A=D2;D2=C;C=B;
+B=(B+rotl(F,s[i]))|0;
+}
+a0=(a0+A)|0;b0=(b0+B)|0;c0=(c0+C)|0;d0=(d0+D2)|0;
+}
+function toHex(n){
+let hex='';
+for(let i=0;i<4;i++){hex+=((n>>>(i*8))&0xFF).toString(16).padStart(2,'0');}
+return hex;
+}
+return toHex(a0)+toHex(b0)+toHex(c0)+toHex(d0);
+}
+
+// rawName = the real MediaWiki file title, e.g. "Surge_Crystal(Magmatic).png"
+function fandomUrl(rawName){
+const hash=md5(rawName);
+const encoded=rawName.replace(/\(/g,'%28').replace(/\)/g,'%29');
+return 'https://static.wikia.nocookie.net/the-corebound-mobile/images/'+hash[0]+'/'+hash.substring(0,2)+'/'+encoded;
+}
+
+const EMPTY_TECH_IMG=fandomUrl('Empty_tech_slot.png');
+const EMPTY_WEAPON_IMG=fandomUrl('Empty_weapon_slot.png');
+
+// Fandom's CDN appears to reject/hotlink-block image requests that carry a
+// Referer header from another site (this page loaded locally via file://
+// sends no Referer at all, which is why it "only worked locally"). Creating
+// every <img> through this helper suppresses the Referer entirely.
+function mkImg(src){
+const im=D.createElement('img');
+im.referrerPolicy='no-referrer';
+im.src=src;
+return im;
+}
 
 function fmt(s){return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('_')}
 function imgUrl(n,t){
 if(!n)return'';
 if(n==='Core Filter'){
 const c=t.toLowerCase();
-return 'https://corebound-game.fandom.com/wiki/Special:FilePath/Core_Filter%28'+c.charAt(0).toUpperCase()+c.slice(1)+'%29.png';
+const cap=c.charAt(0).toUpperCase()+c.slice(1);
+return fandomUrl('Core_Filter('+cap+').png');
 }
-return 'https://corebound-game.fandom.com/wiki/Special:FilePath/'+fmt(n)+'%28'+fmt(t)+'%29.png';
+return fandomUrl(fmt(n)+'('+fmt(t)+').png');
 }
 function tLvl(t){return sys.tierLvl[(t||'').toLowerCase()]||0}
 
@@ -217,21 +298,16 @@ d.className='slot';
 if(v===-1){
 d.classList.add('hull-slot');
 if(state.hull.name){
-const im=D.createElement('img');
-im.src=imgUrl(state.hull.name,state.hull.tier);
-d.appendChild(im);
+d.appendChild(mkImg(imgUrl(state.hull.name,state.hull.tier)));
 }
 d.onclick=()=>setSel('hull',0);
 if(state.activeSlot.type==='hull')d.classList.add('active');
 }else{
 if(lo[v]===1){
 if(state.weapons[v]){
-const im=D.createElement('img');
-im.src=imgUrl(state.weapons[v].name,state.weapons[v].tier);
-d.appendChild(im);
+d.appendChild(mkImg(imgUrl(state.weapons[v].name,state.weapons[v].tier)));
 }else{
-const im=D.createElement('img');
-im.src=EMPTY_WEAPON_IMG;
+const im=mkImg(EMPTY_WEAPON_IMG);
 im.style.opacity='0.4';
 d.appendChild(im);
 }
@@ -248,10 +324,36 @@ G.appendChild(d);
 function makeAuxSlot(name,tier){
 const d=D.createElement('div');
 d.className='tech-slot static';
-const im=D.createElement('img');
-im.src=imgUrl(name,tier);
-d.appendChild(im);
+d.appendChild(mkImg(imgUrl(name,tier)));
 return d;
+}
+
+function makeTechSlot(i){
+const d=D.createElement('div');
+d.className='tech-slot';
+if(state.techs[i]){
+d.appendChild(mkImg(imgUrl(state.techs[i].name,state.techs[i].tier)));
+}else{
+const im=mkImg(EMPTY_TECH_IMG);
+im.style.opacity='0.4';
+d.appendChild(im);
+}
+d.onclick=()=>setSel('tech',i);
+if(state.activeSlot.type==='tech'&&state.activeSlot.idx===i)d.classList.add('active');
+return d;
+}
+
+// Same row-splitting math as Module:HullLayout's ADVANCED 3-ROW SPLITTING MATH:
+// fixed at 2 rows until either row would exceed 11, then it becomes 3 rows.
+function splitRows(total){
+if(total<=0)return[0,0,0];
+if(total<=7)return[total,0,0];
+if(total<=14)return[7,total-7,0];
+if(total<=22){
+const r1=8+Math.floor((total-15)/2);
+return[r1,total-r1,0];
+}
+return[11,11,total-22];
 }
 
 function rdrTechs(){
@@ -259,36 +361,31 @@ T.innerHTML='';
 const m=calcMaxT();
 while(state.techs.length<m)state.techs.push(null);
 if(state.techs.length>m)state.techs.length=m;
-for(let i=0;i<m;i++){
-const d=D.createElement('div');
-d.className='tech-slot';
-if(state.techs[i]){
-const im=D.createElement('img');
-im.src=imgUrl(state.techs[i].name,state.techs[i].tier);
-d.appendChild(im);
-}else{
-const im=D.createElement('img');
-im.src=EMPTY_TECH_IMG;
-im.style.opacity='0.4';
-d.appendChild(im);
-}
-d.onclick=()=>setSel('tech',i);
-if(state.activeSlot.type==='tech'&&state.activeSlot.idx===i)d.classList.add('active');
-T.appendChild(d);
-}
-// Extra slots beyond the calculated base+Nexus count, in the same order Module:HullLayout appends them.
-if(state.coreFilter){
-T.appendChild(makeAuxSlot('Core Filter',state.coreFilter));
-}
+
+// Build the ordered element list exactly like Module:HullLayout's all_elements.
+const elements=[];
+for(let i=0;i<m;i++)elements.push(()=>makeTechSlot(i));
+if(state.coreFilter)elements.push(()=>makeAuxSlot('Core Filter',state.coreFilter));
 if(state.coreInverter){
-T.appendChild(makeAuxSlot('Core Inverter','Relic'));
-if(state.coreInverterFilterColor){
-T.appendChild(makeAuxSlot('Core Filter',state.coreInverterFilterColor));
+elements.push(()=>makeAuxSlot('Core Inverter','Relic'));
+if(state.coreInverterFilterColor)elements.push(()=>makeAuxSlot('Core Filter',state.coreInverterFilterColor));
 }
+for(let i=0;i<state.coreFragment;i++)elements.push(()=>makeAuxSlot('Core Fragment','Relic'));
+
+const rows=splitRows(elements.length).filter(c=>c>0);
+const divisor=Math.max(...rows,1);
+let cursor=0;
+rows.forEach(count=>{
+const rowDiv=D.createElement('div');
+rowDiv.className='tech-row';
+for(let k=0;k<count;k++){
+const el=elements[cursor++]();
+el.style.flex='0 0 calc(100% / '+divisor+')';
+el.style.maxWidth='66px';
+rowDiv.appendChild(el);
 }
-for(let i=0;i<state.coreFragment;i++){
-T.appendChild(makeAuxSlot('Core Fragment','Relic'));
-}
+T.appendChild(rowDiv);
+});
 }
 
 function setSel(typ,idx){
@@ -329,12 +426,10 @@ l.className='item-list';
 v.forEach(i=>{
 const card=D.createElement('div');
 card.className='item-card';
-const isFixed=FIXED_RELIC_ITEMS.includes(i);
-const im=D.createElement('img');
-im.src=imgUrl(i,isFixed?'Relic':currentT);
+const im=mkImg(imgUrl(i,currentT));
 im.onerror=()=>{im.src=EMPTY_WEAPON_IMG;};
 const span=D.createElement('span');
-span.textContent=isFixed?(i+' (Relic)'):i;
+span.textContent=i;
 card.appendChild(im);
 card.appendChild(span);
 card.onclick=()=>setItm(k,i);
@@ -354,17 +449,38 @@ FILTER_COLORS.forEach(c=>{
 filterSel.appendChild(new Option(c,c));
 invFilterSel.appendChild(new Option(c,c));
 });
+const invFilterField=D.getElementById('invFilterField');
 filterSel.onchange=()=>{state.coreFilter=filterSel.value||null;rdr();};
 invChk.onchange=()=>{
 state.coreInverter=invChk.checked;
-invFilterSel.disabled=!invChk.checked;
+invFilterField.style.display=invChk.checked?'flex':'none';
 // Unchecking no longer clears the previously chosen inverter filter color;
-// it's just hidden/disabled and |core_inverter_filter= stops being emitted
-// until Core Inverter is re-checked, at which point the color is restored.
+// it's just hidden and |core_inverter_filter= stops being emitted until
+// Core Inverter is re-checked, at which point the color is restored.
 rdr();
 };
 invFilterSel.onchange=()=>{state.coreInverterFilterColor=invFilterSel.value||null;rdr();};
 fragSel.onchange=()=>{state.coreFragment=parseInt(fragSel.value,10)||0;rdr();};
+
+// Radar and Nexus are always Relic quality, so they live here instead of the
+// generic Techs list and don't need to react to the global tier selector.
+function renderRelicItems(){
+const list=D.getElementById('relicItemsList');
+list.innerHTML='';
+FIXED_RELIC_ITEMS.forEach(n=>{
+const card=D.createElement('div');
+card.className='item-card';
+const im=mkImg(imgUrl(n,'Relic'));
+im.onerror=()=>{im.src=EMPTY_WEAPON_IMG;};
+const span=D.createElement('span');
+span.textContent=n+' (Relic)';
+card.appendChild(im);
+card.appendChild(span);
+card.onclick=()=>setItm('Techs',n);
+list.appendChild(card);
+});
+}
+renderRelicItems();
 
 function gen(){
 let s='{{Loadout\n';
