@@ -14,12 +14,13 @@ h1{margin:0 0 10px 0;font-size:24px;color:#112}
 .grid{display:grid;grid-template-columns:repeat(3,70px);grid-template-rows:repeat(3,70px);gap:4px}
 .slot{width:70px;height:70px;background:#000;border:2px solid #333;border-radius:8px;display:flex;justify-content:center;align-items:center;cursor:pointer;position:relative}
 .slot.hidden{visibility:hidden}
-.slot.active{border-color:#ffcc00;box-shadow:0 0 8px rgba(255,204,0,0.8)}
+.slot.active{border-color:#fff;box-shadow:0 0 8px #fffa}
 .slot img{max-width:90%;max-height:90%;pointer-events:none}
 .hull-slot{border-color:#888}
 .tech-box{background:rgba(30,30,30,0.6);border-radius:16px;padding:10px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:320px}
 .tech-slot{width:60px;height:60px;background:#000;border:2px solid #333;border-radius:8px;display:flex;justify-content:center;align-items:center;cursor:pointer}
-.tech-slot.active{border-color:#ffcc00}
+.tech-slot.active{border-color:#fff}
+.tech-slot.static{cursor:default;border-color:#555}
 .tech-slot img{max-width:90%;max-height:90%;pointer-events:none}
 .selection-panel{width:400px;background:#fff;border:1px solid #c8ccd1;border-radius:8px;padding:15px;display:flex;flex-direction:column;gap:15px;height:fit-content;max-height:85vh;overflow-y:auto}
 .tier-select{width:100%;padding:8px;font-size:14px;border:1px solid #a2a9b1;border-radius:4px}
@@ -29,6 +30,9 @@ h1{margin:0 0 10px 0;font-size:24px;color:#112}
 .item-card:hover{background:#eaf3ff;border-color:#3366cc}
 .item-card img{width:40px;height:40px;object-fit:contain}
 .item-card span{font-size:10px;text-align:center;margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;height:24px}
+.aux-field{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:bold;color:#333}
+.aux-field select{padding:6px;font-size:13px;border:1px solid #a2a9b1;border-radius:4px}
+.aux-field.checkbox-row{flex-direction:row;align-items:center;gap:6px;font-weight:normal}
 .output-area{width:100%;max-width:1100px;margin-top:20px;display:flex;flex-direction:column;gap:8px}
 textarea{width:100%;height:150px;font-family:monospace;padding:10px;border:1px solid #a2a9b1;border-radius:4px;resize:vertical;box-sizing:border-box;background:#f8f9fa}
 button.copy{padding:8px 16px;background:#3366cc;color:white;border:none;border-radius:4px;cursor:pointer;align-self:flex-end;font-weight:bold}
@@ -38,7 +42,7 @@ button.copy:hover{background:#2a4b8d}
 <body>
 <h1>Template Editor: Loadout</h1>
 <div class="intro">
-This tool is designed to help you quickly construct and visualize the {{<a href="https://corebound-game.fandom.com/wiki/Template:Loadout">Loadout</a>}} template for The Corebound Wiki. Select a tier, pick your items from the right panel to fill the visual grid, and the corresponding wikitext will be automatically generated below. Dynamic tech slots are calculated based on your hull tier and node bonuses.
+This tool is designed to help you quickly construct and visualize the {{<a href="https://corebound-game.fandom.com/wiki/Template:Loadout">Loadout</a>}} template for The Corebound Wiki. Select a tier, pick your items from the right panel to fill the visual grid, and the corresponding wikitext will be automatically generated below. Dynamic tech slots are calculated based on your hull tier, node bonuses, and Nexus bonus, matching Module:HullLayout.
 </div>
 <div class="container">
 <div class="preview-panel">
@@ -56,26 +60,40 @@ This tool is designed to help you quickly construct and visualize the {{<a href=
 <option value="Frozen">Frozen</option>
 <option value="Geared">Geared</option>
 <option value="Magmatic">Magmatic</option>
-<option value="Relic">Relic</option>
-<option value="Black">Black (Filter)</option>
-<option value="Cyan">Cyan (Filter)</option>
-<option value="Green">Green (Filter)</option>
-<option value="Mint">Mint (Filter)</option>
-<option value="Orange">Orange (Filter)</option>
-<option value="Pink">Pink (Filter)</option>
-<option value="Purple">Purple (Filter)</option>
-<option value="White">White (Filter)</option>
-<option value="Yellow">Yellow (Filter)</option>
+<option value="Gilded">Gilded</option>
 </select>
 <button onclick="
 const tp=state.activeSlot.type;
 const id=state.activeSlot.idx;
 if(tp==='weapon')state.weapons[id]=null;
 if(tp==='tech')state.techs[id]=null;
-if(tp==='aux')state.aux=null;
 rdr();
-" style="width: 100%; background: rgb(255, 238, 238); padding: 8px; border: 1px solid rgb(162, 169, 177); border-radius: 4px; cursor: pointer; font-weight: bold;">Clear Selected Slot</button>
+" style="width: 100%; background: rgb(255, 238, 238); padding: 8px; border: 1px solid rgb(162, 169, 177); border-radius: 4px; cursor: pointer; font-weight: bold; margin-top:10px;">Clear Selected Slot</button>
 <div class="selection-panel">
+<div class="category" id="auxPanel">
+<h3>Core Systems</h3>
+<div style="display:flex;flex-direction:column;gap:10px;">
+<div class="aux-field">
+Core Filter
+<select id="coreFilterSel"><option value="">None</option></select>
+</div>
+<div class="aux-field checkbox-row">
+<input type="checkbox" id="coreInverterChk"> Core Inverter
+</div>
+<div class="aux-field">
+Inverter Filter
+<select id="coreInverterFilterSel" disabled><option value="">None (Empty)</option></select>
+</div>
+<div class="aux-field">
+Core Fragment count
+<select id="coreFragmentSel">
+<option value="0">0</option>
+<option value="1">1</option>
+<option value="2">2</option>
+</select>
+</div>
+</div>
+</div>
 <div id="selectionCategories"></div>
 </div>
 </div>
@@ -85,20 +103,29 @@ rdr();
 <button class="copy" onclick="copyCode()">Copy Wikitext</button>
 </div>
 <script>
+// Item pools (Core Filter / Core Inverter / Core Fragment are handled by the
+// dedicated "Core Systems" panel below, not as generic tech items, because
+// Module:HullLayout treats them as separate template parameters, not entries
+// inside |tech_slots=).
 const items={
 Hulls:['Crawler','Driver','Dasher','Tank'],
 Weapons:['Amp','Ember','Mortar','Node','Nova','Ranger','Surge Crystal','Turret'],
-Techs:['Drone','Hookshot','Hull Shred','Leech Core','Magnifier','Motor','Overdrive Cell','Propeller','Shield Unit','Spike','Spring','Nexus','Radar'],
-AuxTechs:['Core Filter','Core Inverter']
+Techs:['Drone','Hookshot','Hull Shred','Leech Core','Magnifier','Motor','Overdrive Cell','Propeller','Shield Unit','Spike','Spring','Nexus','Radar']
 };
+const FILTER_COLORS=['Black','Cyan','Green','Mint','Orange','Pink','Purple','White','Yellow'];
+// Radar and Nexus only ever come in Relic quality; they ignore the global tier selector entirely.
+const FIXED_RELIC_ITEMS=['Radar','Nexus'];
+
+// Mirrors Module:HullLayout/data exactly.
 const sys={
-tierLvl:{scrap:1,tarnished:2,pure:3,toxic:4,frozen:5,geared:6,magmatic:7,relic:8},
+tierLvl:{scrap:1,tarnished:2,pure:3,toxic:4,frozen:5,geared:6,magmatic:7,gilded:8},
 slotMap:{
-crawler:{scrap:3,tarnished:4,pure:5,toxic:6,frozen:7,geared:8,magmatic:10,relic:10},
-tank:{scrap:3,tarnished:4,pure:4,toxic:5,frozen:6,geared:7,magmatic:8,relic:8},
-driver:{scrap:2,tarnished:3,pure:4,toxic:5,frozen:6,geared:7,magmatic:8,relic:8},
-dasher:{toxic:4,frozen:5,geared:7,magmatic:8,relic:8}
+crawler:{scrap:3,tarnished:4,pure:6,toxic:8,frozen:10,geared:12,magmatic:14,gilded:16},
+tank:{scrap:3,tarnished:4,pure:4,toxic:5,frozen:7,geared:9,magmatic:11,gilded:13},
+driver:{scrap:2,tarnished:3,pure:5,toxic:7,frozen:8,geared:10,magmatic:12,gilded:14},
+dasher:{scrap:1,tarnished:2,pure:4,toxic:5,frozen:7,geared:9,magmatic:11,gilded:13}
 },
+nodeBonus:{scrap:1,tarnished:1,pure:1,toxic:1,frozen:2,geared:2,magmatic:2,gilded:2},
 layouts:{
 dasher:[0,0,1,0,0,0,1,0],
 tank:[1,1,1,1,1,0,0,0],
@@ -109,18 +136,26 @@ keys:['slot_left','slot_tl','slot_top','slot_tr','slot_right','slot_br','slot_bo
 tkeys:['tier_left','tier_tl','tier_top','tier_tr','tier_right','tier_br','tier_bottom','tier_bl'],
 gridMap:[1,2,3,0,-1,4,7,6,5]
 };
+
 let state={
 hull:{name:'Crawler',tier:'Scrap'},
 weapons:Array(8).fill(null),
-techs:[],
-aux:null,
+techs:[], // generic tech_slots items; resized each render to match calcMaxT()
+coreFilter:null, // color string or null -> |core_filter=
+coreInverter:false, // -> triggers |core_inverter_filter=
+coreInverterFilterColor:null, // color string or null (null => 'empty')
+coreFragment:0, // 0-2 -> |core_fragment=
 activeSlot:{type:'hull',idx:0}
 };
+
 const D=document;
 const G=D.getElementById('mainGrid');
 const T=D.getElementById('techBox');
 const O=D.getElementById('output');
 const S=D.getElementById('globalTier');
+const EMPTY_TECH_IMG='https://the-corebound-mobile.fandom.com/wiki/Special:FilePath/Empty_tech_slot.png';
+const EMPTY_WEAPON_IMG='https://the-corebound-mobile.fandom.com/wiki/Special:FilePath/Empty_weapon_slot.png';
+
 function fmt(s){return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('_')}
 function imgUrl(n,t){
 if(!n)return'';
@@ -130,24 +165,48 @@ return 'https://corebound-game.fandom.com/wiki/Special:FilePath/Core_Filter%28'+
 }
 return 'https://corebound-game.fandom.com/wiki/Special:FilePath/'+fmt(n)+'%28'+fmt(t)+'%29.png';
 }
-function tLvl(t){return sys.tierLvl[t.toLowerCase()]||0}
-function calcMaxT(){
+function tLvl(t){return sys.tierLvl[(t||'').toLowerCase()]||0}
+
+// Base tech slots = hull/tier slot_map lookup + Node bonus (matches get_max_techs + node_bonus loop in Lua)
+function calcBaseTechs(){
 const h=state.hull.name.toLowerCase();
 const t=state.hull.tier.toLowerCase();
 let efT=t;
-if(h==='dasher'&&tLvl(t)<tLvl('toxic'))efT='toxic';
+if(h==='dasher'&&tLvl(t)<tLvl('toxic'))efT='toxic'; // Dasher is always evaluated at Toxic tier or above
 let base=(sys.slotMap[h]||{})[efT]||0;
-let bo=0;
-for(let w of state.weapons){
+let bonus=0;
+for(const w of state.weapons){
 if(w&&w.name.toLowerCase()==='node'){
-let nt=w.tier.toLowerCase();
-if(tLvl(nt)<tLvl('pure'))nt='pure';
-if(['pure','toxic','frozen'].includes(nt))bo+=2;
-if(['geared','magmatic','relic'].includes(nt))bo+=3;
+bonus+=sys.nodeBonus[(w.tier||'').toLowerCase()]||0;
 }
 }
-return base+bo;
+return base+bonus;
 }
+
+// Nexus bonus = floor(distinct item count / 3), only if a Nexus tech is present (matches Lua nexus_bonus logic)
+function calcNexusBonus(){
+const distinct={};
+for(const w of state.weapons){
+if(w&&w.name) distinct[w.name.toLowerCase()]=true;
+}
+let hasNexus=false;
+for(const t of state.techs){
+if(t&&t.name){
+const ln=t.name.toLowerCase();
+distinct[ln]=true;
+if(ln==='nexus')hasNexus=true;
+}
+}
+if(state.coreFragment>0) distinct['core fragment']=true;
+if(!hasNexus)return 0;
+return Math.floor(Object.keys(distinct).length/3);
+}
+
+function calcMaxT(){
+// New template: base_tech_slots = get_max_techs(...) + node_bonus + nexus_bonus + fragment_count
+return calcBaseTechs()+calcNexusBonus()+state.coreFragment;
+}
+
 function rdrGrid(){
 G.innerHTML='';
 const h=state.hull.name.toLowerCase();
@@ -172,7 +231,7 @@ im.src=imgUrl(state.weapons[v].name,state.weapons[v].tier);
 d.appendChild(im);
 }else{
 const im=D.createElement('img');
-im.src='https://the-corebound-mobile.fandom.com/wiki/Special:FilePath/Empty_weapon_slot.png';
+im.src=EMPTY_WEAPON_IMG;
 im.style.opacity='0.4';
 d.appendChild(im);
 }
@@ -185,6 +244,16 @@ d.classList.add('hidden');
 G.appendChild(d);
 });
 }
+
+function makeAuxSlot(name,tier){
+const d=D.createElement('div');
+d.className='tech-slot static';
+const im=D.createElement('img');
+im.src=imgUrl(name,tier);
+d.appendChild(im);
+return d;
+}
+
 function rdrTechs(){
 T.innerHTML='';
 const m=calcMaxT();
@@ -199,7 +268,7 @@ im.src=imgUrl(state.techs[i].name,state.techs[i].tier);
 d.appendChild(im);
 }else{
 const im=D.createElement('img');
-im.src='https://the-corebound-mobile.fandom.com/wiki/Special:FilePath/Empty_tech_slot.png';
+im.src=EMPTY_TECH_IMG;
 im.style.opacity='0.4';
 d.appendChild(im);
 }
@@ -207,21 +276,26 @@ d.onclick=()=>setSel('tech',i);
 if(state.activeSlot.type==='tech'&&state.activeSlot.idx===i)d.classList.add('active');
 T.appendChild(d);
 }
-if(state.aux){
-const d=D.createElement('div');
-d.className='tech-slot';
-const im=D.createElement('img');
-im.src=imgUrl(state.aux.name,state.aux.tier);
-d.appendChild(im);
-d.onclick=()=>setSel('aux',0);
-if(state.activeSlot.type==='aux')d.classList.add('active');
-T.appendChild(d);
+// Extra slots beyond the calculated base+Nexus count, in the same order Module:HullLayout appends them.
+if(state.coreFilter){
+T.appendChild(makeAuxSlot('Core Filter',state.coreFilter));
+}
+if(state.coreInverter){
+T.appendChild(makeAuxSlot('Core Inverter','Relic'));
+if(state.coreInverterFilterColor){
+T.appendChild(makeAuxSlot('Core Filter',state.coreInverterFilterColor));
 }
 }
+for(let i=0;i<state.coreFragment;i++){
+T.appendChild(makeAuxSlot('Core Fragment','Relic'));
+}
+}
+
 function setSel(typ,idx){
 state.activeSlot={type:typ,idx:idx};
 rdr();
 }
+
 function setItm(cat,n){
 const t=S.value;
 const tp=state.activeSlot.type;
@@ -232,16 +306,14 @@ sys.layouts[n.toLowerCase()].forEach((v,i)=>{if(v===0)state.weapons[i]=null});
 }else if(cat==='Weapons'){
 if(tp==='weapon')state.weapons[id]={name:n,tier:t};
 }else if(cat==='Techs'){
-if(tp==='tech')state.techs[id]={name:n,tier:t};
-}else if(cat==='AuxTechs'){
-if(n==='Core Filter'){
-state.aux={name:n,tier:t};
-}else{
-if(tp==='aux'||tp==='tech')state.aux={name:n,tier:t};
+if(tp==='tech'){
+const tier=FIXED_RELIC_ITEMS.includes(n)?'Relic':t;
+state.techs[id]={name:n,tier:tier};
 }
 }
 rdr();
 }
+
 function rdrPanel(){
 const p=D.getElementById('selectionCategories');
 p.innerHTML='';
@@ -257,11 +329,12 @@ l.className='item-list';
 v.forEach(i=>{
 const card=D.createElement('div');
 card.className='item-card';
+const isFixed=FIXED_RELIC_ITEMS.includes(i);
 const im=D.createElement('img');
-im.src=imgUrl(i,currentT);
-im.onerror=()=>{im.src='https://the-corebound-mobile.fandom.com/wiki/Special:FilePath/Empty_weapon_slot.png';};
+im.src=imgUrl(i,isFixed?'Relic':currentT);
+im.onerror=()=>{im.src=EMPTY_WEAPON_IMG;};
 const span=D.createElement('span');
-span.textContent=i;
+span.textContent=isFixed?(i+' (Relic)'):i;
 card.appendChild(im);
 card.appendChild(span);
 card.onclick=()=>setItm(k,i);
@@ -271,6 +344,28 @@ c.appendChild(l);
 p.appendChild(c);
 }
 }
+
+// ---- Core Systems panel wiring (core_filter / core_inverter_filter / core_fragment) ----
+const filterSel=D.getElementById('coreFilterSel');
+const invChk=D.getElementById('coreInverterChk');
+const invFilterSel=D.getElementById('coreInverterFilterSel');
+const fragSel=D.getElementById('coreFragmentSel');
+FILTER_COLORS.forEach(c=>{
+filterSel.appendChild(new Option(c,c));
+invFilterSel.appendChild(new Option(c,c));
+});
+filterSel.onchange=()=>{state.coreFilter=filterSel.value||null;rdr();};
+invChk.onchange=()=>{
+state.coreInverter=invChk.checked;
+invFilterSel.disabled=!invChk.checked;
+// Unchecking no longer clears the previously chosen inverter filter color;
+// it's just hidden/disabled and |core_inverter_filter= stops being emitted
+// until Core Inverter is re-checked, at which point the color is restored.
+rdr();
+};
+invFilterSel.onchange=()=>{state.coreInverterFilterColor=invFilterSel.value||null;rdr();};
+fragSel.onchange=()=>{state.coreFragment=parseInt(fragSel.value,10)||0;rdr();};
+
 function gen(){
 let s='{{Loadout\n';
 s+=`|hull_item=${state.hull.name}\n`;
@@ -283,20 +378,23 @@ s+=`|${sys.keys[i]}=${state.weapons[i].name}\n`;
 s+=`|${sys.tkeys[i]}=${state.weapons[i].tier}\n`;
 }
 });
-let ts=state.techs.map(t=>t?`${t.name}{{!}}${t.tier}`:'');
-if(state.aux){
-if(state.aux.name==='Core Filter'){
-s+=`|core_filter=${state.aux.tier.toLowerCase()}\n`;
-}else{
-ts.push(`${state.aux.name}{{!}}${state.aux.tier}`);
-}
-}
+const ts=state.techs.map(t=>t?`${t.name}{{!}}${t.tier}`:'');
 if(ts.some(x=>x!=='')){
 s+=`|tech_slots=${ts.join(',')}\n`;
+}
+if(state.coreFilter){
+s+=`|core_filter=${state.coreFilter.toLowerCase()}\n`;
+}
+if(state.coreInverter){
+s+=`|core_inverter_filter=${state.coreInverterFilterColor?state.coreInverterFilterColor.toLowerCase():'empty'}\n`;
+}
+if(state.coreFragment>0){
+s+=`|core_fragment=${state.coreFragment}\n`;
 }
 s+='}}';
 O.value=s;
 }
+
 function rdr(){rdrGrid();rdrTechs();gen();}
 rdrPanel();
 rdr();
