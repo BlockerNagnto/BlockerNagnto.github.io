@@ -3,27 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
 <title>Template Editor:Loadout</title>
 <style>
 body{font-family:sans-serif;background:#eee;color:#333;margin:0;padding:20px;display:flex;flex-direction:column;align-items:center}
 h1{margin:0 0 10px 0;font-size:24px;color:#112}
 .intro{max-width:800px;text-align:center;margin-bottom:20px;font-size:14px;color:#555;line-height:1.5}
 .container{display:flex;gap:20px;max-width:1100px;width:100%;align-items:stretch}
-.preview-panel{flex:1;background:url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="none"/><rect width="10" height="10" fill="rgba(0,0,0,0.05)"/><rect x="10" y="10" width="10" height="10" fill="rgba(0,0,0,0.05)"/></svg>') #fff;border:1px solid #c8ccd1;border-radius:8px;padding:20px;display:flex;flex-direction:column;align-items:center;overflow-y:auto;box-sizing:border-box;min-width:0}
+.preview-panel{flex:1;background:url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="none"/><rect width="10" height="10" fill="rgba(0,0,0,0.05)"/><rect x="10" y="10" width="10" height="10" fill="rgba(0,0,0,0.05)"/></svg>') #fff;border:1px solid #c8ccd1;border-radius:8px;padding:20px;display:flex;flex-direction:column;align-items:center;box-sizing:border-box;min-width:0}
 .hull-box{background:rgba(30,30,30,0.6);border-radius:16px;padding:10px;display:inline-block;margin-bottom:20px;flex-shrink:0}
-.grid{display:grid;grid-template-columns:repeat(3,70px);grid-template-rows:repeat(3,70px);gap:4px}
+.grid{display:grid;gap:4px}
 .slot{width:70px;height:70px;background:#000;border:2px solid #333;border-radius:8px;display:flex;justify-content:center;align-items:center;cursor:pointer;position:relative}
-.slot.hidden{visibility:hidden}
 .slot.active{border-color:#fff;box-shadow:0 0 8px #fffa}
 .slot img{max-width:90%;max-height:90%;pointer-events:none}
 .hull-slot{border-color:#888}
-.tech-box{width:100%;background:rgba(30,30,30,0.6);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
-.tech-row{display:flex;gap:6px;width:100%;box-sizing:border-box}
-.tech-slot{aspect-ratio:1/1;min-width:0;background:#000;border:2px solid #333;border-radius:8px;display:flex;justify-content:center;align-items:center;cursor:pointer;box-sizing:border-box}
+.tech-box{background:rgba(30,30,30,0.6);border-radius:16px;padding:10px;display:inline-flex;flex-direction:column;gap:6px;box-sizing:border-box;max-width:100%}
+.tech-row{display:flex;gap:6px;justify-content:flex-start}
+.tech-slot{flex-shrink:0;background:#000;border:2px solid #333;border-radius:8px;display:flex;justify-content:center;align-items:center;cursor:pointer;box-sizing:border-box}
 .tech-slot.active{border-color:#fff}
 .tech-slot.static{cursor:default;border-color:#555}
 .tech-slot img{max-width:90%;max-height:90%;pointer-events:none}
-.selection-panel{width:400px;background:#fff;border:1px solid #c8ccd1;border-radius:8px;padding:15px;display:flex;flex-direction:column;gap:15px;max-height:85vh;box-sizing:border-box;overflow-y:auto}
+.selection-panel{width:400px;background:#fff;border:1px solid #c8ccd1;border-radius:8px;padding:15px;display:flex;flex-direction:column;gap:15px;box-sizing:border-box}
 .tier-select{width:100%;padding:8px;font-size:14px;border:1px solid #a2a9b1;border-radius:4px}
 .category h3{margin:0 0 8px 0;font-size:16px;border-bottom:1px solid #eaecf0;padding-bottom:4px}
 .item-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:6px}
@@ -40,10 +40,9 @@ button.copy{padding:8px 16px;background:#3366cc;color:white;border:none;border-r
 button.copy:hover{background:#2a4b8d}
 @media (max-width:860px){
 .container{flex-direction:column;align-items:stretch}
-.preview-panel{width:100%;box-sizing:border-box;height:auto;max-height:60vh}
-.selection-panel{width:100%;max-height:60vh}
+.preview-panel{width:100%;box-sizing:border-box}
+.selection-panel{width:100%}
 }
-
 </style>
 </head>
 <body>
@@ -113,20 +112,14 @@ Core Fragment count
 <button class="copy" onclick="copyCode()">Copy Wikitext</button>
 </div>
 <script>
-// Item pools (Core Filter / Core Inverter / Core Fragment are handled by the
-// dedicated "Core Systems" panel below, not as generic tech items, because
-// Module:HullLayout treats them as separate template parameters, not entries
-// inside |tech_slots=).
 const items={
 Hulls:['Crawler','Driver','Dasher','Tank'],
 Weapons:['Amp','Ember','Mortar','Node','Nova','Ranger','Surge Crystal','Turret'],
 Techs:['Drone','Hookshot','Hull Shred','Leech Core','Magnifier','Motor','Overdrive Cell','Propeller','Shield Unit','Spike','Spring']
 };
 const FILTER_COLORS=['Black','Cyan','Green','Mint','Orange','Pink','Purple','White','Yellow'];
-// Radar and Nexus only ever come in Relic quality; they ignore the global tier selector entirely.
 const FIXED_RELIC_ITEMS=['Radar','Nexus'];
 
-// Mirrors Module:HullLayout/data exactly.
 const sys={
 tierLvl:{scrap:1,tarnished:2,pure:3,toxic:4,frozen:5,geared:6,magmatic:7,gilded:8},
 slotMap:{
@@ -143,18 +136,17 @@ crawler:[1,0,1,0,1,0,0,0],
 driver:[1,0,1,0,1,0,0,0]
 },
 keys:['slot_left','slot_tl','slot_top','slot_tr','slot_right','slot_br','slot_bottom','slot_bl'],
-tkeys:['tier_left','tier_tl','tier_top','tier_tr','tier_right','tier_br','tier_bottom','tier_bl'],
-gridMap:[1,2,3,0,-1,4,7,6,5]
+tkeys:['tier_left','tier_tl','tier_top','tier_tr','tier_right','tier_br','tier_bottom','tier_bl']
 };
 
 let state={
 hull:{name:'Crawler',tier:'Scrap'},
 weapons:Array(8).fill(null),
-techs:[], // generic tech_slots items; resized each render to match calcMaxT()
-coreFilter:null, // color string or null -> |core_filter=
-coreInverter:false, // -> triggers |core_inverter_filter=
-coreInverterFilterColor:null, // color string or null (null => 'empty')
-coreFragment:0, // 0-2 -> |core_fragment=
+techs:[],
+coreFilter:null,
+coreInverter:false,
+coreInverterFilterColor:null,
+coreFragment:0,
 activeSlot:{type:'hull',idx:0}
 };
 
@@ -164,10 +156,6 @@ const T=D.getElementById('techBox');
 const O=D.getElementById('output');
 const S=D.getElementById('globalTier');
 
-// Minimal MD5 (public domain, RFC 1321) - used only to reproduce MediaWiki's
-// hashed upload directory scheme so we can link straight to the CDN file
-// instead of the Special:FilePath redirector (whose final /revision/latest?cb=
-// URL sometimes fails to load when this page is hosted off-wiki).
 function md5(string){
 function rotl(n,c){return (n<<c)|(n>>>(32-c));}
 function toBytes(str){
@@ -215,45 +203,70 @@ return hex;
 return toHex(a0)+toHex(b0)+toHex(c0)+toHex(d0);
 }
 
-// rawName = the real MediaWiki file title, e.g. "Surge_Crystal(Magmatic).png"
-function fandomUrl(rawName){
+// 包含了新舊 Wiki 的 Bucket 名稱列表
+const BUCKETS=['corebound-game','the-corebound-mobile','corebound'];
+
+// 使用 wsrv.nl 代理請求，繞過 GitHub Pages 上的跨域 (CORS) 與防盜鏈 (Hotlinking) 阻擋
+function bucketUrl(bucket,rawName){
+if(!rawName) return '';
 const hash=md5(rawName);
 const encoded=rawName.replace(/\(/g,'%28').replace(/\)/g,'%29');
-return 'https://static.wikia.nocookie.net/the-corebound-mobile/images/'+hash[0]+'/'+hash.substring(0,2)+'/'+encoded;
+const rawUrl='https://static.wikia.nocookie.net/'+bucket+'/images/'+hash[0]+'/'+hash.substring(0,2)+'/'+encoded;
+return 'https://wsrv.nl/?url='+encodeURIComponent(rawUrl);
 }
 
-const EMPTY_TECH_IMG=fandomUrl('Empty_tech_slot.png');
-const EMPTY_WEAPON_IMG=fandomUrl('Empty_weapon_slot.png');
-
-// Fandom's CDN appears to reject/hotlink-block image requests that carry a
-// Referer header from another site (this page loaded locally via file://
-// sends no Referer at all, which is why it "only worked locally"). Creating
-// every <img> through this helper suppresses the Referer entirely.
-function mkImg(src){
+function mkImg(rawName,fallbackRawName){
 const im=D.createElement('img');
 im.referrerPolicy='no-referrer';
-im.src=src;
+const queue=[];
+
+// 1. 嘗試所有 Bucket
+if(rawName){
+BUCKETS.forEach(b=>queue.push(bucketUrl(b,rawName)));
+}
+
+// 2. 如果包含 Gilded，嘗試變體命名規則
+if(rawName && rawName.includes('Gilded')){
+const altName=rawName.replace('(Gilded)','_Gilded');
+BUCKETS.forEach(b=>queue.push(bucketUrl(b,altName)));
+}
+
+// 3. Fallback 到默認佔位圖片
+if(fallbackRawName){
+BUCKETS.forEach(b=>queue.push(bucketUrl(b,fallbackRawName)));
+}
+
+let i=0;
+im.onerror=function(){
+if(i<queue.length){
+im.src=queue[i++];
+}else{
+im.onerror=null;
+}
+};
+im.src=queue[i++];
 return im;
 }
 
 function fmt(s){return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('_')}
-function imgUrl(n,t){
-if(!n)return'';
+
+function rawFileName(n,t){
+if(!n)return null;
 if(n==='Core Filter'){
 const c=t.toLowerCase();
 const cap=c.charAt(0).toUpperCase()+c.slice(1);
-return fandomUrl('Core_Filter('+cap+').png');
+return 'Core_Filter('+cap+').png';
 }
-return fandomUrl(fmt(n)+'('+fmt(t)+').png');
+return fmt(n)+'('+fmt(t)+').png';
 }
+
 function tLvl(t){return sys.tierLvl[(t||'').toLowerCase()]||0}
 
-// Base tech slots = hull/tier slot_map lookup + Node bonus (matches get_max_techs + node_bonus loop in Lua)
 function calcBaseTechs(){
 const h=state.hull.name.toLowerCase();
 const t=state.hull.tier.toLowerCase();
 let efT=t;
-if(h==='dasher'&&tLvl(t)<tLvl('toxic'))efT='toxic'; // Dasher is always evaluated at Toxic tier or above
+if(h==='dasher'&&tLvl(t)<tLvl('toxic'))efT='toxic';
 let base=(sys.slotMap[h]||{})[efT]||0;
 let bonus=0;
 for(const w of state.weapons){
@@ -264,7 +277,6 @@ bonus+=sys.nodeBonus[(w.tier||'').toLowerCase()]||0;
 return base+bonus;
 }
 
-// Nexus bonus = floor(distinct item count / 3), only if a Nexus tech is present (matches Lua nexus_bonus logic)
 function calcNexusBonus(){
 const distinct={};
 for(const w of state.weapons){
@@ -284,7 +296,6 @@ return Math.floor(Object.keys(distinct).length/3);
 }
 
 function calcMaxT(){
-// New template: base_tech_slots = get_max_techs(...) + node_bonus + nexus_bonus + fragment_count
 return calcBaseTechs()+calcNexusBonus()+state.coreFragment;
 }
 
@@ -292,39 +303,46 @@ function rdrGrid(){
 G.innerHTML='';
 const h=state.hull.name.toLowerCase();
 const lo=sys.layouts[h]||sys.layouts.crawler;
-sys.gridMap.forEach((v,i)=>{
+const rowActive=[lo[1]===1||lo[2]===1||lo[3]===1, true, lo[7]===1||lo[6]===1||lo[5]===1];
+const colActive=[lo[1]===1||lo[0]===1||lo[7]===1, true, lo[3]===1||lo[4]===1||lo[5]===1];
+const activeRows=[0,1,2].filter(r=>rowActive[r]);
+const activeCols=[0,1,2].filter(c=>colActive[c]);
+G.style.gridTemplateRows='repeat('+activeRows.length+',70px)';
+G.style.gridTemplateColumns='repeat('+activeCols.length+',70px)';
+const grid=[[1,2,3],[0,-1,4],[7,6,5]];
+activeRows.forEach((r,ri)=>{
+activeCols.forEach((c,ci)=>{
+const v=grid[r][c];
+if(v!==-1&&lo[v]!==1)return;
 const d=D.createElement('div');
 d.className='slot';
+d.style.gridRow=(ri+1);
+d.style.gridColumn=(ci+1);
 if(v===-1){
 d.classList.add('hull-slot');
-if(state.hull.name){
-d.appendChild(mkImg(imgUrl(state.hull.name,state.hull.tier)));
-}
+if(state.hull.name)d.appendChild(mkImg(rawFileName(state.hull.name,state.hull.tier),'Empty_weapon_slot.png'));
 d.onclick=()=>setSel('hull',0);
 if(state.activeSlot.type==='hull')d.classList.add('active');
 }else{
-if(lo[v]===1){
 if(state.weapons[v]){
-d.appendChild(mkImg(imgUrl(state.weapons[v].name,state.weapons[v].tier)));
+d.appendChild(mkImg(rawFileName(state.weapons[v].name,state.weapons[v].tier),'Empty_weapon_slot.png'));
 }else{
-const im=mkImg(EMPTY_WEAPON_IMG);
+const im=mkImg('Empty_weapon_slot.png');
 im.style.opacity='0.4';
 d.appendChild(im);
 }
 d.onclick=()=>setSel('weapon',v);
 if(state.activeSlot.type==='weapon'&&state.activeSlot.idx===v)d.classList.add('active');
-}else{
-d.classList.add('hidden');
-}
 }
 G.appendChild(d);
+});
 });
 }
 
 function makeAuxSlot(name,tier){
 const d=D.createElement('div');
 d.className='tech-slot static';
-d.appendChild(mkImg(imgUrl(name,tier)));
+d.appendChild(mkImg(rawFileName(name,tier),'Empty_tech_slot.png'));
 return d;
 }
 
@@ -332,9 +350,9 @@ function makeTechSlot(i){
 const d=D.createElement('div');
 d.className='tech-slot';
 if(state.techs[i]){
-d.appendChild(mkImg(imgUrl(state.techs[i].name,state.techs[i].tier)));
+d.appendChild(mkImg(rawFileName(state.techs[i].name,state.techs[i].tier),'Empty_tech_slot.png'));
 }else{
-const im=mkImg(EMPTY_TECH_IMG);
+const im=mkImg('Empty_tech_slot.png');
 im.style.opacity='0.4';
 d.appendChild(im);
 }
@@ -343,8 +361,6 @@ if(state.activeSlot.type==='tech'&&state.activeSlot.idx===i)d.classList.add('act
 return d;
 }
 
-// Same row-splitting math as Module:HullLayout's ADVANCED 3-ROW SPLITTING MATH:
-// fixed at 2 rows until either row would exceed 11, then it becomes 3 rows.
 function splitRows(total){
 if(total<=0)return[0,0,0];
 if(total<=7)return[total,0,0];
@@ -362,7 +378,6 @@ const m=calcMaxT();
 while(state.techs.length<m)state.techs.push(null);
 if(state.techs.length>m)state.techs.length=m;
 
-// Build the ordered element list exactly like Module:HullLayout's all_elements.
 const elements=[];
 for(let i=0;i<m;i++)elements.push(()=>makeTechSlot(i));
 if(state.coreFilter)elements.push(()=>makeAuxSlot('Core Filter',state.coreFilter));
@@ -373,20 +388,33 @@ if(state.coreInverterFilterColor)elements.push(()=>makeAuxSlot('Core Filter',sta
 for(let i=0;i<state.coreFragment;i++)elements.push(()=>makeAuxSlot('Core Fragment','Relic'));
 
 const rows=splitRows(elements.length).filter(c=>c>0);
+if(rows.length===0)return;
 const divisor=Math.max(...rows,1);
+const previewEl=T.closest('.preview-panel');
+let availPx=600;
+if(previewEl){
+const pcs=getComputedStyle(previewEl);
+const tcs=getComputedStyle(T);
+const usedPadding=parseFloat(pcs.paddingLeft)+parseFloat(pcs.paddingRight)+parseFloat(tcs.paddingLeft)+parseFloat(tcs.paddingRight);
+availPx=previewEl.clientWidth-usedPadding-2;
+}
+const gapPx=6;
+let slotSize=Math.floor((availPx-gapPx*(divisor-1))/divisor);
+slotSize=Math.max(24,Math.min(66,slotSize));
 let cursor=0;
 rows.forEach(count=>{
 const rowDiv=D.createElement('div');
 rowDiv.className='tech-row';
 for(let k=0;k<count;k++){
 const el=elements[cursor++]();
-el.style.flex='0 0 calc(100% / '+divisor+')';
-el.style.maxWidth='66px';
+el.style.width=slotSize+'px';
+el.style.height=slotSize+'px';
 rowDiv.appendChild(el);
 }
 T.appendChild(rowDiv);
 });
 }
+window.addEventListener('resize',()=>rdrTechs());
 
 function setSel(typ,idx){
 state.activeSlot={type:typ,idx:idx};
@@ -426,8 +454,7 @@ l.className='item-list';
 v.forEach(i=>{
 const card=D.createElement('div');
 card.className='item-card';
-const im=mkImg(imgUrl(i,currentT));
-im.onerror=()=>{im.src=EMPTY_WEAPON_IMG;};
+const im=mkImg(rawFileName(i,currentT),'Empty_weapon_slot.png');
 const span=D.createElement('span');
 span.textContent=i;
 card.appendChild(im);
@@ -440,7 +467,6 @@ p.appendChild(c);
 }
 }
 
-// ---- Core Systems panel wiring (core_filter / core_inverter_filter / core_fragment) ----
 const filterSel=D.getElementById('coreFilterSel');
 const invChk=D.getElementById('coreInverterChk');
 const invFilterSel=D.getElementById('coreInverterFilterSel');
@@ -454,24 +480,18 @@ filterSel.onchange=()=>{state.coreFilter=filterSel.value||null;rdr();};
 invChk.onchange=()=>{
 state.coreInverter=invChk.checked;
 invFilterField.style.display=invChk.checked?'flex':'none';
-// Unchecking no longer clears the previously chosen inverter filter color;
-// it's just hidden and |core_inverter_filter= stops being emitted until
-// Core Inverter is re-checked, at which point the color is restored.
 rdr();
 };
 invFilterSel.onchange=()=>{state.coreInverterFilterColor=invFilterSel.value||null;rdr();};
 fragSel.onchange=()=>{state.coreFragment=parseInt(fragSel.value,10)||0;rdr();};
 
-// Radar and Nexus are always Relic quality, so they live here instead of the
-// generic Techs list and don't need to react to the global tier selector.
 function renderRelicItems(){
 const list=D.getElementById('relicItemsList');
 list.innerHTML='';
 FIXED_RELIC_ITEMS.forEach(n=>{
 const card=D.createElement('div');
 card.className='item-card';
-const im=mkImg(imgUrl(n,'Relic'));
-im.onerror=()=>{im.src=EMPTY_WEAPON_IMG;};
+const im=mkImg(rawFileName(n,'Relic'),'Empty_weapon_slot.png');
 const span=D.createElement('span');
 span.textContent=n+' (Relic)';
 card.appendChild(im);
